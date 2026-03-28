@@ -1,0 +1,511 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cat Adventure Game</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700&display=swap" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            width: 100%;
+            height: 100vh;
+            margin: 0;
+            padding: 0;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            font-family: 'Nunito', Arial, sans-serif;
+            overflow: hidden;
+            position: relative;
+        }
+        
+        .page {
+            display: none;
+            width: 100%;
+            height: 100%;
+            position: absolute;
+            top: 0;
+            left: 0;
+        }
+        
+        .page.active {
+            display: flex;
+        }
+        
+        /* Homepage Styles */
+        #homepage {
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            background: linear-gradient(180deg, #87CEEB 0%, #E0F6FF 100%);
+        }
+
+        #homepage.active {
+            display: flex;
+        }
+        
+        .homepage-content {
+            text-align: center;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 40px;
+        }
+        
+        .game-title {
+            font-size: 72px;
+            font-weight: bold;
+            color: #264653;
+            text-shadow: 3px 3px 6px rgba(0, 0, 0, 0.2);
+            margin-bottom: 20px;
+        }
+        
+        .cat-emoji {
+            font-size: 100px;
+            animation: bounce 2s infinite;
+        }
+        
+        @keyframes bounce {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-20px); }
+        }
+        
+        .button-group {
+            display: flex;
+            gap: 30px;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+
+        .lang-select {
+            margin-top: 20px;
+            background: white;
+            border: 2px solid #2980B9;
+            border-radius: 12px;
+            padding: 10px 15px;
+            font-size: 20px;
+            font-weight: bold;
+            color: #264653;
+            cursor: pointer;
+        }
+
+        .main-button {
+            padding: 20px 50px;
+            font-size: 24px;
+            font-weight: bold;
+            border: none;
+            border-radius: 15px;
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+        }
+        
+        #play-btn {
+            background: linear-gradient(135deg, #2ECC71 0%, #27AE60 100%);
+            color: white;
+        }
+        
+        #rules-btn {
+            background: linear-gradient(135deg, #3498DB 0%, #2980B9 100%);
+            color: white;
+        }
+        
+        .top-controls {
+            position: absolute;
+            left: 20px;
+            right: 20px;
+            top: 20px;
+            display: flex;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 10px;
+            z-index: 300;
+        }
+
+        #player-name-btn {
+            padding: 10px 16px;
+            font-size: 16px;
+            background: linear-gradient(135deg, #F6D365 0%, #FDA085 100%);
+            color: #2F3E4E;
+            border: 1px solid #ccc;
+            border-radius: 12px;
+            cursor: pointer;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.15);
+            font-family: 'Nunito', Arial, sans-serif;
+        }
+
+        #new-account-btn {
+            padding: 10px 14px;
+            font-size: 14px;
+            background: linear-gradient(135deg, #74b9ff 0%, #0984e3 100%);
+            color: white;
+            border: none;
+            border-radius: 12px;
+            cursor: pointer;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.15);
+            font-family: 'Nunito', Arial, sans-serif;
+        }
+
+        #leaderboard-btn {
+            position: static;
+            transform: none;
+            padding: 10px 16px;
+            font-size: 16px;
+            background: linear-gradient(135deg, #FFD700 0%, #FFA500 100%);
+            color: white;
+            border: none;
+            border-radius: 12px;
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+            font-family: 'Nunito', Arial, sans-serif;
+        }
+        
+        .main-button:hover, #leaderboard-btn:hover {
+            transform: scale(1.05);
+            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.3);
+        }
+        
+        .main-button:active, #leaderboard-btn:active {
+            transform: scale(0.95);
+        }
+        
+        /* Game Container */
+        #game-page {
+            position: absolute;
+            width: 100vw;
+            height: 100vh;
+            top: 0;
+            left: 0;
+            display: none;
+            justify-content: center;
+            align-items: center;
+            background: linear-gradient(180deg, #87CEEB 0%, #B9E6FF 100%);
+        }
+
+        #game-page.active {
+            display: flex;
+        }
+
+        #game-container {
+            width: 100vw;
+            height: calc(100vh - 80px);
+            background: #f0f0f0;
+            border-radius: 0;
+            box-shadow: none;
+            overflow: hidden;
+            position: relative;
+        }
+
+        #game-page .page-ui {
+            position: absolute;
+            top: 10px;
+            left: 0;
+            right: 0;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 8px 20px;
+            z-index: 250;
+            background: rgba(255, 255, 255, 0.15);
+            backdrop-filter: blur(6px);
+        }
+
+        #game-page #home-btn {
+            position: relative;
+            transform: none;
+            margin: 0;
+            z-index: 260;
+        }
+
+        #game-ui-left, #game-ui-right {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            color: white;
+            text-shadow: 1px 1px 3px rgba(0,0,0,0.6);
+            font-weight: bold;
+            font-size: 20px;
+            z-index: 260;
+        }
+
+        .game-hud {
+            padding: 8px 12px;
+            border-radius: 10px;
+            background: rgba(0, 0, 0, 0.35);
+        }
+
+        #score, #level {
+            position: relative;
+            top: auto;
+            left: auto;
+            right: auto;
+            color: #fff;
+            text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.7);
+            transform: none;
+            z-index: 260;
+        }
+        
+        #home-btn {
+            position: absolute;
+            top: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            padding: 10px 20px;
+            font-size: 18px;
+            background: linear-gradient(135deg, #FF6B6B 0%, #EE5A6F 100%);
+            color: white;
+            border: none;
+            border-radius: 10px;
+            cursor: pointer;
+            z-index: 150;
+            transition: transform 0.2s, box-shadow 0.2s;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+        }
+        
+        #home-btn:hover {
+            transform: scale(1.05);
+            box-shadow: 0 6px 16px rgba(0, 0, 0, 0.3);
+        }
+        
+        #home-btn:active {
+            transform: scale(0.95);
+        }
+        
+        /* Rules and Leaderboard Pages */
+        .page-content {
+            width: 100%;
+            height: 100%;
+            padding: 40px;
+            background: linear-gradient(180deg, #87CEEB 0%, #E0F6FF 100%);
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .page-header {
+            font-size: 48px;
+            font-weight: bold;
+            color: #264653;
+            text-align: center;
+            margin-bottom: 40px;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.1);
+            font-family: 'Nunito', sans-serif;
+        }
+        
+        .back-btn {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            padding: 10px 20px;
+            font-size: 16px;
+            background: linear-gradient(135deg, #FF6B6B 0%, #EE5A6F 100%);
+            color: white;
+            border: none;
+            border-radius: 10px;
+            cursor: pointer;
+            z-index: 100;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+        
+        .back-btn:hover {
+            transform: scale(1.05);
+            box-shadow: 0 6px 16px rgba(0, 0, 0, 0.3);
+        }
+        
+        .rules-list {
+            background: rgba(255, 255, 255, 0.9);
+            padding: 30px;
+            border-radius: 15px;
+            max-width: 800px;
+            margin: 0 auto;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+        }
+        
+        .rules-list li {
+            font-size: 18px;
+            color: #333;
+            margin: 15px 0;
+            list-style-position: inside;
+            line-height: 1.6;
+        }
+        
+        .leaderboard-table {
+            background: rgba(255, 255, 255, 0.9);
+            padding: 30px;
+            border-radius: 15px;
+            max-width: 600px;
+            margin: 0 auto;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+            font-family: 'Nunito', sans-serif;
+        }
+        
+        .leaderboard-table table {
+            width: 100%;
+            border-collapse: collapse;
+            font-family: 'Nunito', sans-serif;
+        }
+        
+        .leaderboard-table th, .leaderboard-table td {
+            padding: 12px;
+            text-align: center;
+            border-bottom: 2px solid #ddd;
+            font-size: 18px;
+            font-family: 'Nunito', sans-serif;
+        }
+        
+        .leaderboard-table th {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            font-weight: bold;
+            font-family: 'Nunito', sans-serif;
+        }
+        
+        .leaderboard-table tr:hover {
+            background: #f5f5f5;
+        }
+
+        .leaderboard-table tr.rank-1 {
+            background: linear-gradient(135deg, #ffd700, #ffe36a);
+            color: #2b2b2b;
+            font-weight: 700;
+        }
+
+        .leaderboard-table tr.current-player {
+            border: 2px solid #2ecc71;
+            box-shadow: inset 0 0 8px rgba(46, 204, 113, 0.6);
+            background: rgba(46, 204, 113, 0.15);
+        }
+
+        .leaderboard-table tr.rank-2 {
+            background: linear-gradient(135deg, #c0c0c0, #e0e0e0);
+            color: #2b2b2b;
+            font-weight: 700;
+        }
+
+        .leaderboard-table tr.rank-3 {
+            background: linear-gradient(135deg, #cd7f32, #dba47b);
+            color: #2b2b2b;
+            font-weight: 700;
+        }
+    </style>
+</head>
+<body>
+    <!-- Homepage -->
+    <div id="homepage" class="page active">
+        <div class="top-controls">
+            <button id="player-name-btn">Name: ScruffyCat567</button>
+            <button id="new-account-btn">✚ New Account</button>
+            <button id="leaderboard-btn">🏆 Leaderboard</button>
+        </div>
+        <div class="homepage-content">
+            <div class="cat-emoji">🐱</div>
+            <h1 class="game-title">Cat Adventure</h1>
+            <div class="button-group">
+                <button id="rules-btn" class="main-button" data-i18n="btn.rules">📖 Rules</button>
+                <button id="play-btn" class="main-button" data-i18n="btn.play">▶ Play</button>
+            </div>
+            <select id="language-selector" class="lang-select">
+                <option value="en">🇺🇸 English</option>
+                <option value="zh-CN">🇨🇳 Chinese</option>
+                <option value="ko-KR">🇰🇷 Korean</option>
+            </select>
+        </div>
+    </div>
+    
+    <!-- Rules Page -->
+    <div id="rules" class="page">
+        <button class="back-btn" data-i18n="btn.back">← Back</button>
+        <div class="page-content">
+            <h1 id="rules-header" class="page-header" data-i18n="rules.title">Game Rules 📋</h1>
+            <div class="rules-list">
+                <ul>
+                    <li id="rule-objective"><strong>Objective:</strong> Guide your cat through increasingly difficult levels to reach the goal door.</li>
+                    <li id="rule-controls"><strong>Controls:</strong> Use WASD or Arrow Keys to move left/right and jump.</li>
+                    <li id="rule-platforms"><strong>Platforms:</strong> Jump across platforms to reach higher areas and avoid falling.</li>
+                    <li id="rule-enemies"><strong>Enemies:</strong> Ground enemies walk back and forth, flying enemies hover and bob in the sky. Touching any enemy costs a life.</li>
+                    <li id="rule-lives"><strong>Lives:</strong> You start with 3 lives. Lose all 3 and it's game over! Each new level resets your lives to 3.</li>
+                    <li id="rule-scoring"><strong>Scoring:</strong> Earn 100 points for each level you complete. Try to get the highest score!</li>
+                    <li id="rule-difficulty"><strong>Difficulty:</strong> Each level gets progressively harder with more platforms, enemies, and flying threats.</li>
+                    <li id="rule-goal"><strong>Goal:</strong> Reach the golden door at the end of each level to advance.</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Leaderboard Page -->
+    <div id="leaderboard" class="page">
+        <button class="back-btn" data-i18n="btn.back">← Back</button>
+        <div class="page-content">
+            <h1 id="leaderboard-header" class="page-header" data-i18n="leaderboard.title">🏆 Leaderboard</h1>
+            <div class="leaderboard-table">
+                <table>
+                    <thead>
+                        <tr>
+                            <th data-i18n="leaderboard.rank">Rank</th>
+                            <th data-i18n="leaderboard.player">Player</th>
+                            <th data-i18n="leaderboard.score">Score</th>
+                            <th data-i18n="leaderboard.level">Level</th>
+                        </tr>
+                    </thead>
+                    <tbody id="leaderboard-list">
+                        <tr>
+                            <td>1</td>
+                            <td>Whiskers</td>
+                            <td>600</td>
+                            <td>6</td>
+                        </tr>
+                        <tr>
+                            <td>2</td>
+                            <td>Mittens</td>
+                            <td>500</td>
+                            <td>5</td>
+                        </tr>
+                        <tr>
+                            <td>3</td>
+                            <td>Shadow</td>
+                            <td>400</td>
+                            <td>4</td>
+                        </tr>
+                        <tr>
+                            <td>4</td>
+                            <td>Luna</td>
+                            <td>300</td>
+                            <td>3</td>
+                        </tr>
+                        <tr>
+                            <td>5</td>
+                            <td>Tiger</td>
+                            <td>200</td>
+                            <td>2</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Game Container -->
+    <div id="game-page" class="page">
+        <div class="page-ui">
+            <button id="home-btn">🏠 Home</button>
+            <div id="game-ui-left">
+                <div id="score" class="game-hud">Score: <span id="score-value">0</span></div>
+                <div id="level" class="game-hud">Level: <span id="level-value">1</span></div>
+            </div>
+        </div>
+        <div id="game-container"></div>
+    </div>
+    
+    <script src="https://cdn.jsdelivr.net/npm/phaser@3.55.2/dist/phaser.js"></script>
+    <script src="src/navigation.js"></script>
+    <script src="src/gameScene.js"></script>
+    <script src="src/main.js"></script>
+</body>
+</html>
