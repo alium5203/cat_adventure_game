@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="192" height="192" viewBox="0 0 192 192" role="img" aria-label="Coriander Arcade Icon 192">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#667eea"/>
+      <stop offset="100%" stop-color="#764ba2"/>
+    </linearGradient>
+  </defs>
+  <rect x="8" y="8" width="176" height="176" rx="40" fill="url(#bg)"/>
+  <circle cx="68" cy="68" r="22" fill="#f6d365"/>
+  <rect x="52" y="96" width="88" height="44" rx="18" fill="#2ecc71"/>
+  <path d="M52 118h88" stroke="#1f2933" stroke-width="6"/>
+  <text x="96" y="168" text-anchor="middle" font-family="Nunito, Arial, sans-serif" font-size="24" font-weight="800" fill="#ffffff">CA</text>
+</svg>

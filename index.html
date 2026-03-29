@@ -4,9 +4,10 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Cat Adventure Game</title>
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700&display=swap" rel="stylesheet">
+    <meta name="theme-color" content="#667eea">
+    <link rel="manifest" href="manifest.json">
+    <link rel="icon" type="image/svg+xml" href="assets/icons/icon-192.svg">
+    <link rel="apple-touch-icon" href="assets/icons/icon-192.svg">
     <style>
         * {
             margin: 0;
@@ -38,32 +39,222 @@
             display: flex;
         }
         
-        /* Homepage Styles */
+        /* Landing Page */
+        #landing-page {
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            background:
+                radial-gradient(circle at top left, rgba(255, 255, 255, 0.65), transparent 35%),
+                radial-gradient(circle at bottom right, rgba(255, 209, 102, 0.35), transparent 30%),
+                linear-gradient(140deg, #fef6e4 0%, #f3d2c1 45%, #8bd3dd 100%);
+            overflow-y: auto;
+        }
+
+        #landing-page.active {
+            display: flex;
+        }
+
+        .landing-shell {
+            width: min(1180px, 100%);
+            min-height: 100vh;
+            padding: 120px 32px 48px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            gap: 32px;
+        }
+
+        .landing-hero {
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+            max-width: 720px;
+        }
+
+        .hub-kicker {
+            display: inline-flex;
+            align-self: flex-start;
+            padding: 8px 14px;
+            border-radius: 999px;
+            background: rgba(38, 70, 83, 0.08);
+            color: #264653;
+            font-size: 14px;
+            font-weight: 800;
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
+        }
+
+        .hub-title {
+            font-size: clamp(52px, 8vw, 86px);
+            font-weight: 800;
+            line-height: 0.95;
+            color: #1f2933;
+            text-shadow: 0 12px 30px rgba(38, 70, 83, 0.12);
+        }
+
+        .hub-copy {
+            max-width: 640px;
+            font-size: 20px;
+            line-height: 1.6;
+            color: #334e68;
+        }
+
+        .games-section {
+            display: flex;
+            flex-direction: column;
+            gap: 18px;
+        }
+
+        .section-heading {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .section-heading h2 {
+            font-size: 32px;
+            color: #102a43;
+        }
+
+        .section-heading p {
+            font-size: 18px;
+            color: #486581;
+        }
+
+        .games-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 24px;
+        }
+
+        .game-card {
+            display: flex;
+            flex-direction: column;
+            gap: 24px;
+            padding: 28px;
+            border-radius: 28px;
+            border: 1px solid rgba(16, 42, 67, 0.08);
+            background: rgba(255, 255, 255, 0.72);
+            box-shadow: 0 24px 60px rgba(16, 42, 67, 0.14);
+            backdrop-filter: blur(10px);
+        }
+
+        .game-card.featured {
+            background: linear-gradient(160deg, rgba(255, 255, 255, 0.92) 0%, rgba(255, 247, 237, 0.92) 100%);
+            border-color: rgba(244, 162, 97, 0.28);
+        }
+
+        .game-card.coming-soon {
+            border-style: dashed;
+            background: rgba(244, 244, 245, 0.7);
+        }
+
+        .game-card-art {
+            width: 84px;
+            height: 84px;
+            display: grid;
+            place-items: center;
+            border-radius: 24px;
+            font-size: 46px;
+            background: linear-gradient(135deg, #ffd166 0%, #f4a261 100%);
+            box-shadow: inset 0 2px 8px rgba(255, 255, 255, 0.45);
+        }
+
+        .game-card.coming-soon .game-card-art {
+            background: linear-gradient(135deg, #dfe7fd 0%, #b8c0ff 100%);
+        }
+
+        .game-card-body {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .game-status {
+            font-size: 14px;
+            font-weight: 800;
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
+            color: #b45309;
+        }
+
+        .game-card.coming-soon .game-status {
+            color: #5b5f97;
+        }
+
+        .game-card h3 {
+            font-size: 34px;
+            color: #102a43;
+        }
+
+        .game-card p {
+            font-size: 18px;
+            line-height: 1.6;
+            color: #486581;
+        }
+
+        .game-card-meta {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+
+        .game-card-meta span {
+            padding: 8px 14px;
+            border-radius: 999px;
+            background: rgba(16, 42, 67, 0.08);
+            color: #102a43;
+            font-size: 14px;
+            font-weight: 700;
+        }
+
+        .hub-button {
+            align-self: flex-start;
+            padding: 16px 28px;
+            font-size: 20px;
+            background: linear-gradient(135deg, #264653 0%, #1d3557 100%);
+            color: white;
+        }
+
+        /* Cat Adventure Page */
         #homepage {
             flex-direction: column;
             justify-content: center;
             align-items: center;
-            background: linear-gradient(180deg, #87CEEB 0%, #E0F6FF 100%);
+            background:
+                radial-gradient(circle at top center, rgba(255, 255, 255, 0.4), transparent 28%),
+                linear-gradient(180deg, #87ceeb 0%, #b8f2e6 100%);
+            padding: 24px;
         }
 
         #homepage.active {
             display: flex;
         }
-        
+
+        .game-home-shell {
+            width: min(1120px, 100%);
+            position: relative;
+        }
+
         .homepage-content {
             text-align: center;
             display: flex;
             flex-direction: column;
             align-items: center;
-            gap: 40px;
+            gap: 28px;
+            padding: 72px 32px 40px;
+            border-radius: 32px;
+            background: rgba(255, 255, 255, 0.72);
+            box-shadow: 0 22px 60px rgba(15, 23, 42, 0.18);
+            backdrop-filter: blur(10px);
         }
-        
+
         .game-title {
-            font-size: 72px;
-            font-weight: bold;
+            font-size: clamp(54px, 7vw, 76px);
+            font-weight: 800;
             color: #264653;
-            text-shadow: 3px 3px 6px rgba(0, 0, 0, 0.2);
-            margin-bottom: 20px;
+            text-shadow: 3px 3px 6px rgba(0, 0, 0, 0.12);
         }
         
         .cat-emoji {
@@ -76,6 +267,29 @@
             50% { transform: translateY(-20px); }
         }
         
+        .game-page-copy {
+            max-width: 720px;
+            font-size: 21px;
+            line-height: 1.6;
+            color: #355070;
+        }
+
+        .game-feature-row {
+            display: flex;
+            justify-content: center;
+            flex-wrap: wrap;
+            gap: 14px;
+        }
+
+        .game-feature {
+            padding: 12px 16px;
+            border-radius: 16px;
+            background: rgba(38, 70, 83, 0.08);
+            color: #1f2933;
+            font-size: 16px;
+            font-weight: 700;
+        }
+
         .button-group {
             display: flex;
             gap: 30px;
@@ -84,7 +298,6 @@
         }
 
         .lang-select {
-            margin-top: 20px;
             background: white;
             border: 2px solid #2980B9;
             border-radius: 12px;
@@ -106,12 +319,12 @@
             box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
         }
         
-        #play-btn {
+        .play-game-btn {
             background: linear-gradient(135deg, #2ECC71 0%, #27AE60 100%);
             color: white;
         }
         
-        #rules-btn {
+        .rules-btn {
             background: linear-gradient(135deg, #3498DB 0%, #2980B9 100%);
             color: white;
         }
@@ -152,6 +365,19 @@
             font-family: 'Nunito', Arial, sans-serif;
         }
 
+        #reset-data-btn {
+            padding: 10px 14px;
+            font-size: 14px;
+            background: linear-gradient(135deg, #ef476f 0%, #c1121f 100%);
+            color: white;
+            border: none;
+            border-radius: 12px;
+            cursor: pointer;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.15);
+            font-family: 'Nunito', Arial, sans-serif;
+            font-weight: 700;
+        }
+
         #leaderboard-btn {
             position: static;
             transform: none;
@@ -165,6 +391,54 @@
             transition: transform 0.2s, box-shadow 0.2s;
             box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
             font-family: 'Nunito', Arial, sans-serif;
+        }
+
+        #score-badges {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            flex-wrap: wrap;
+        }
+
+        #player-current-run,
+        #player-best-score {
+            padding: 10px 16px;
+            font-size: 16px;
+            background: linear-gradient(135deg, #6dd5ed 0%, #2193b0 100%);
+            color: white;
+            border: none;
+            border-radius: 12px;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+            font-family: 'Nunito', Arial, sans-serif;
+            font-weight: 700;
+        }
+
+        #player-best-score {
+            background: linear-gradient(135deg, #4facfe 0%, #00c6ff 100%);
+        }
+
+        #app-toast {
+            position: fixed;
+            left: 50%;
+            bottom: 26px;
+            transform: translateX(-50%) translateY(24px);
+            background: rgba(17, 24, 39, 0.95);
+            color: #ffffff;
+            padding: 11px 16px;
+            border-radius: 12px;
+            font-size: 14px;
+            font-weight: 700;
+            font-family: 'Nunito', Arial, sans-serif;
+            box-shadow: 0 8px 22px rgba(0, 0, 0, 0.28);
+            z-index: 12000;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.18s ease, transform 0.18s ease;
+        }
+
+        #app-toast.show {
+            opacity: 1;
+            transform: translateX(-50%) translateY(0);
         }
         
         .main-button:hover, #leaderboard-btn:hover {
@@ -233,6 +507,39 @@
             font-weight: bold;
             font-size: 20px;
             z-index: 260;
+        }
+
+        #game-ui-right {
+            justify-content: flex-end;
+        }
+
+        .hud-btn {
+            padding: 8px 14px;
+            border: none;
+            border-radius: 10px;
+            cursor: pointer;
+            color: #ffffff;
+            font-weight: 700;
+            font-size: 15px;
+            transition: transform 0.15s ease, box-shadow 0.15s ease;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.25);
+        }
+
+        #pause-btn {
+            background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%);
+        }
+
+        #stop-btn {
+            background: linear-gradient(135deg, #ef4444 0%, #b91c1c 100%);
+        }
+
+        .hud-btn:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 6px 14px rgba(0, 0, 0, 0.3);
+        }
+
+        .hud-btn:active {
+            transform: translateY(0);
         }
 
         .game-hud {
@@ -318,6 +625,12 @@
             transform: scale(1.05);
             box-shadow: 0 6px 16px rgba(0, 0, 0, 0.3);
         }
+
+        .games-hub-btn {
+            position: absolute;
+            top: 0;
+            left: 0;
+        }
         
         .rules-list {
             background: rgba(255, 255, 255, 0.9);
@@ -394,28 +707,270 @@
             color: #2b2b2b;
             font-weight: 700;
         }
+
+        @media (max-width: 720px) {
+            body {
+                overflow: auto;
+            }
+
+            .landing-shell {
+                padding: 110px 18px 28px;
+            }
+
+            .hub-copy,
+            .game-card p,
+            .game-page-copy,
+            .section-heading p {
+                font-size: 17px;
+            }
+
+            .top-controls {
+                left: 14px;
+                right: 14px;
+                top: 14px;
+            }
+
+            .homepage-content {
+                padding: 88px 20px 28px;
+            }
+
+            .games-hub-btn {
+                position: static;
+                margin-bottom: 16px;
+            }
+
+            .button-group {
+                gap: 16px;
+            }
+
+            .main-button,
+            .hub-button {
+                width: 100%;
+            }
+        }
+
+        /* Login Overlay */
+        #login-overlay {
+            position: fixed;
+            inset: 0;
+            z-index: 9999;
+            background: rgba(15, 20, 40, 0.72);
+            backdrop-filter: blur(6px);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        #login-overlay.hidden {
+            display: none;
+        }
+
+        .login-box {
+            background: #fff;
+            border-radius: 24px;
+            padding: 40px 44px;
+            width: min(420px, 92vw);
+            display: flex;
+            flex-direction: column;
+            gap: 14px;
+            box-shadow: 0 24px 64px rgba(0, 0, 0, 0.45);
+            text-align: center;
+        }
+
+        .login-box h2 {
+            font-size: 26px;
+            font-weight: 800;
+            color: #1f2933;
+            margin-bottom: 2px;
+        }
+
+        .login-box .login-subtitle {
+            font-size: 15px;
+            color: #627d98;
+        }
+
+        .login-box input {
+            width: 100%;
+            padding: 13px 16px;
+            font-size: 16px;
+            border: 2px solid #e1e8f0;
+            border-radius: 12px;
+            font-family: 'Nunito', Arial, sans-serif;
+            outline: none;
+            transition: border-color 0.2s;
+            box-sizing: border-box;
+        }
+
+        .login-box input:focus {
+            border-color: #667eea;
+        }
+
+        #login-error {
+            color: #e74c3c;
+            font-size: 14px;
+            min-height: 18px;
+            font-weight: 600;
+        }
+
+        .login-btn-row {
+            display: flex;
+            gap: 12px;
+        }
+
+        .login-btn-row button {
+            flex: 1;
+            padding: 13px;
+            font-size: 15px;
+            font-weight: 700;
+            border: none;
+            border-radius: 12px;
+            cursor: pointer;
+            font-family: 'Nunito', Arial, sans-serif;
+            transition: transform 0.15s, box-shadow 0.15s;
+        }
+
+        .login-btn-row button:hover {
+            transform: scale(1.04);
+            box-shadow: 0 6px 18px rgba(0, 0, 0, 0.2);
+        }
+
+        #login-submit-btn {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+
+        #login-create-btn {
+            background: linear-gradient(135deg, #2ECC71 0%, #27AE60 100%);
+            color: white;
+        }
     </style>
 </head>
 <body>
-    <!-- Homepage -->
-    <div id="homepage" class="page active">
-        <div class="top-controls">
-            <button id="player-name-btn">Name: ScruffyCat567</button>
-            <button id="new-account-btn">✚ New Account</button>
-            <button id="leaderboard-btn">🏆 Leaderboard</button>
-        </div>
-        <div class="homepage-content">
-            <div class="cat-emoji">🐱</div>
-            <h1 class="game-title">Cat Adventure</h1>
-            <div class="button-group">
-                <button id="rules-btn" class="main-button" data-i18n="btn.rules">📖 Rules</button>
-                <button id="play-btn" class="main-button" data-i18n="btn.play">▶ Play</button>
+
+    <!-- Login Overlay (shown when not logged in) -->
+    <div id="login-overlay">
+        <div class="login-box">
+            <h2>🎮 Coriander Arcade</h2>
+            <p class="login-subtitle">Enter your name and password to play</p>
+            <input type="text" id="login-username" placeholder="Your name" maxlength="20" autocomplete="username" />
+            <input type="password" id="login-password" placeholder="Password" autocomplete="current-password" />
+            <div id="login-error"></div>
+            <div class="login-btn-row">
+                <button id="login-submit-btn">▶ Sign In</button>
+                <button id="login-create-btn">✚ New Account</button>
             </div>
+        </div>
+    </div>
+
+    <!-- Landing Page -->
+    <div id="landing-page" class="page active">
+        <div class="top-controls">
+            <button id="player-name-btn">👤 Player</button>
+            <div id="score-badges">
+                <div id="player-current-run">Current Run: 0</div>
+                <div id="player-best-score">Best Score: 0</div>
+            </div>
+            <button id="new-account-btn">🚪 Sign Out</button>
+            <button id="reset-data-btn">🗑 Reset Data</button>
+            <button id="leaderboard-btn">🏆 Leaderboard</button>
             <select id="language-selector" class="lang-select">
                 <option value="en">🇺🇸 English</option>
                 <option value="zh-CN">🇨🇳 Chinese</option>
                 <option value="ko-KR">🇰🇷 Korean</option>
             </select>
+        </div>
+        <div class="landing-shell">
+            <section class="landing-hero">
+                <p id="hub-kicker" class="hub-kicker">Game Portal</p>
+                <h1 id="hub-title" class="hub-title">Coriander Arcade</h1>
+                <p id="hub-copy" class="hub-copy">Choose a game from the library. Cat Adventure and Turbo Traffic are both live, with room for more to join the lineup.</p>
+            </section>
+            <section class="games-section">
+                <div class="section-heading">
+                    <h2 id="games-section-title">Available Games</h2>
+                    <p id="games-section-copy">Start with Cat Adventure or check back for new releases.</p>
+                </div>
+                <div class="games-grid">
+                    <article class="game-card featured">
+                        <div class="game-card-art">🐱</div>
+                        <div class="game-card-body">
+                            <p id="cat-card-status" class="game-status">Live Now</p>
+                            <h3 id="cat-card-title">Cat Adventure</h3>
+                            <p id="cat-card-copy">Guide a blocky cat through tricky platform levels, dodge enemies, and chase a high score.</p>
+                            <div class="game-card-meta">
+                                <span id="cat-card-genre">Platformer</span>
+                                <span id="cat-card-players">1 Player</span>
+                            </div>
+                        </div>
+                        <button class="main-button hub-button open-game-btn" data-game="cat-adventure">Open Game</button>
+                    </article>
+                    <article class="game-card featured">
+                        <div class="game-card-art">🚗</div>
+                        <div class="game-card-body">
+                            <p id="car-card-status" class="game-status">Live Now</p>
+                            <h3 id="car-card-title">Turbo Traffic</h3>
+                            <p id="car-card-copy">Switch lanes, dodge incoming traffic, and keep your cool as the road gets faster.</p>
+                            <div class="game-card-meta">
+                                <span id="car-card-genre">Endless Runner</span>
+                                <span id="car-card-players">1 Player</span>
+                            </div>
+                        </div>
+                        <button class="main-button hub-button open-game-btn" data-game="turbo-traffic">Open Game</button>
+                    </article>
+                    <article class="game-card coming-soon" aria-disabled="true">
+                        <div class="game-card-art">✨</div>
+                        <div class="game-card-body">
+                            <p id="coming-soon-status" class="game-status">Coming Soon</p>
+                            <h3 id="coming-soon-title">More Games Incoming</h3>
+                            <p id="coming-soon-copy">This slot is ready for the next project. When you add a new game, it can plug straight into this hub.</p>
+                        </div>
+                    </article>
+                </div>
+            </section>
+        </div>
+    </div>
+
+    <!-- Cat Adventure Page -->
+    <div id="homepage" class="page">
+        <div class="game-home-shell">
+            <button class="back-btn games-hub-btn">← All Games</button>
+            <div class="homepage-content">
+                <div class="cat-emoji">🐱</div>
+                <p id="game-page-kicker" class="hub-kicker">Now Playing</p>
+                <h1 id="cat-page-title" class="game-title">Cat Adventure</h1>
+                <p id="cat-page-copy" class="game-page-copy">Jump through stacked platforms, avoid enemies, and reach the golden door to clear each level.</p>
+                <div class="game-feature-row">
+                    <div id="cat-feature-difficulty" class="game-feature">Rising Difficulty</div>
+                    <div id="cat-feature-goal" class="game-feature">Door at Every Finish</div>
+                    <div id="cat-feature-score" class="game-feature">100 Pts per Level</div>
+                </div>
+                <div class="button-group">
+                    <button class="main-button rules-btn" data-game="cat-adventure" data-i18n="btn.rules">📖 Rules</button>
+                    <button class="main-button play-game-btn" data-game="cat-adventure" data-i18n="btn.play">▶ Play</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Turbo Traffic Page -->
+    <div id="turbo-page" class="page">
+        <div class="game-home-shell">
+            <button class="back-btn games-hub-btn">← All Games</button>
+            <div class="homepage-content">
+                <div class="cat-emoji">🚗</div>
+                <p id="car-page-kicker" class="hub-kicker">Engines On</p>
+                <h1 id="car-page-title" class="game-title">Turbo Traffic</h1>
+                <p id="car-page-copy" class="game-page-copy">Slide across three lanes, dodge oncoming traffic, and stack up the longest distance you can survive.</p>
+                <div class="game-feature-row">
+                    <div id="car-feature-lanes" class="game-feature">3-Lane Dodging</div>
+                    <div id="car-feature-speed" class="game-feature">Speed Ramps Up</div>
+                    <div id="car-feature-score" class="game-feature">Distance-Based Score</div>
+                </div>
+                <div class="button-group">
+                    <button class="main-button rules-btn" data-game="turbo-traffic" data-i18n="btn.rules">📖 Rules</button>
+                    <button class="main-button play-game-btn" data-game="turbo-traffic" data-i18n="btn.play">▶ Play</button>
+                </div>
+            </div>
         </div>
     </div>
     
@@ -498,14 +1053,34 @@
             <div id="game-ui-left">
                 <div id="score" class="game-hud">Score: <span id="score-value">0</span></div>
                 <div id="level" class="game-hud">Level: <span id="level-value">1</span></div>
+                <div id="speed" class="game-hud">Speed: <span id="speed-value">0</span></div>
+                <div id="current-run-hud" class="game-hud">Current Run: <span id="current-run-value">0</span></div>
+                <div id="best-score-hud" class="game-hud">Best Score: <span id="best-score-value">0</span></div>
+            </div>
+            <div id="game-ui-right">
+                <button id="pause-btn" class="hud-btn">⏸ Pause</button>
+                <button id="restart-btn" class="hud-btn">🔄 Restart</button>
+                <button id="stop-btn" class="hud-btn">⏹ Stop</button>
             </div>
         </div>
         <div id="game-container"></div>
     </div>
+
+    <div id="app-toast" aria-live="polite" aria-atomic="true"></div>
     
-    <script src="https://cdn.jsdelivr.net/npm/phaser@3.55.2/dist/phaser.js"></script>
+    <script src="src/vendor/phaser-3.55.2.js"></script>
     <script src="src/navigation.js"></script>
     <script src="src/gameScene.js"></script>
+    <script src="src/trafficRunnerScene.js"></script>
     <script src="src/main.js"></script>
+    <script>
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('./sw.js').catch(() => {
+                    // Keep app functional even if offline support registration fails.
+                });
+            });
+        }
+    </script>
 </body>
 </html>

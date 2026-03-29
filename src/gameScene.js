@@ -41,6 +41,12 @@ class GameScene extends Phaser.Scene {
         GameScene.currentLanguage = lang;
     }
 
+    static resetProgress() {
+        GameScene.currentLevel = 1;
+        GameScene.currentScore = 0;
+        GameScene.currentLives = 3;
+    }
+
     getText(key) {
         const lang = GameScene.currentLanguage || 'en';
         const translation = GameScene.translation[lang] || GameScene.translation.en;
@@ -91,13 +97,13 @@ class GameScene extends Phaser.Scene {
                     this.player.body.setVelocityY(-350);
                 }
             });
-            
+
             this.input.keyboard.on('keydown-W', () => {
                 if (this.player.body.touching.down) {
                     this.player.body.setVelocityY(-350);
                 }
             });
-            
+
             this.input.keyboard.on('keydown-UP', () => {
                 if (this.player.body.touching.down) {
                     this.player.body.setVelocityY(-350);
@@ -809,7 +815,7 @@ class GameScene extends Phaser.Scene {
                         align: 'center'
                     }).setOrigin(0.5).setScrollFactor(0);
                     
-                    this.time.delayedCall(2000, () => {
+                    this.time.delayedCall(500, () => {
                         // All lives lost - reset to level 1
                         GameScene.currentLevel = 1;
                         GameScene.currentScore = 0;
@@ -817,7 +823,7 @@ class GameScene extends Phaser.Scene {
                         this.scene.restart();
                     });
                 } else {
-                    this.add.text(this.cameras.main.centerX, this.cameras.main.centerY, 'FELL OFF!\\nRetrying Level...', {
+                    this.add.text(this.cameras.main.centerX, this.cameras.main.centerY, this.getText('fallRetry'), {
                         fontSize: '32px',
                         color: '#FF6600',
                         backgroundColor: '#000000',
@@ -825,7 +831,7 @@ class GameScene extends Phaser.Scene {
                         align: 'center'
                     }).setOrigin(0.5).setScrollFactor(0);
                     
-                    this.time.delayedCall(2000, () => {
+                    this.time.delayedCall(500, () => {
                         // Retry the same level
                         this.scene.restart();
                     });
@@ -865,7 +871,7 @@ class GameScene extends Phaser.Scene {
                 align: 'center'
             }).setOrigin(0.5).setScrollFactor(0);
             
-            this.time.delayedCall(2000, () => {
+            this.time.delayedCall(500, () => {
                 // All lives lost - reset to level 1
                 GameScene.currentLevel = 1;
                 GameScene.currentScore = 0;
@@ -881,7 +887,7 @@ class GameScene extends Phaser.Scene {
                 align: 'center'
             }).setOrigin(0.5).setScrollFactor(0);
             
-            this.time.delayedCall(2000, () => {
+            this.time.delayedCall(500, () => {
                 // Retry the same level
                 this.scene.restart();
             });
@@ -903,10 +909,14 @@ class GameScene extends Phaser.Scene {
         GameScene.currentScore = this.score;
 
         // Register leaderboard entry for completed level (current player account)
-        const playerName = localStorage.getItem('playerName') || 'Player';
-        const playerId = localStorage.getItem('playerId') || null;
+        const loggedInUser = localStorage.getItem('loggedInUser');
+        const playerName = (loggedInUser && loggedInUser.trim()) || localStorage.getItem('playerName') || 'Player';
+        const playerId = loggedInUser
+            ? `user-${loggedInUser.toLowerCase().replace(/\s+/g, '-')}`
+            : (localStorage.getItem('playerId') || null);
         if (window.addLeaderboardEntry) {
-            window.addLeaderboardEntry(playerName, this.score, this.currentLevel, playerId);
+            // Cat awards 100 points per cleared level.
+            window.addLeaderboardEntry(playerName, this.score, this.currentLevel, playerId, 'cat-adventure', 100);
         }
 
         this.currentLevel++;
@@ -922,3 +932,5 @@ class GameScene extends Phaser.Scene {
         });
     }
 }
+
+window.GameScene = GameScene;
