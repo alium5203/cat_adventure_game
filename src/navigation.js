@@ -950,16 +950,26 @@ function resetTouchInputs() {
 function updateTouchControls(gameKey = activeGameKey) {
     const touchControls = document.getElementById('touch-controls');
     const jumpButton = document.getElementById('touch-jump-btn');
-    if (!touchControls || !jumpButton) {
+    const helperLabel = document.getElementById('touch-helper');
+    if (!touchControls || !jumpButton || !helperLabel) {
         return;
     }
 
-    const shouldShow = isTouchDevice() && getActivePageName() === 'game-page';
+    const shouldShow = getActivePageName() === 'game-page';
     touchInputState.enabled = shouldShow;
     touchInputState.gameKey = gameKey;
     touchControls.classList.toggle('hidden', !shouldShow);
     touchControls.dataset.game = gameKey;
-    jumpButton.hidden = gameKey !== GAME_KEYS.CAT;
+
+    if (gameKey === GAME_KEYS.CAT) {
+        jumpButton.hidden = false;
+        jumpButton.textContent = 'JUMP';
+        jumpButton.setAttribute('aria-label', 'Jump');
+        helperLabel.textContent = 'Hold direction to move';
+    } else {
+        jumpButton.hidden = true;
+        helperLabel.textContent = 'Tap left or right to switch lanes';
+    }
 
     if (!shouldShow) {
         resetTouchInputs();
@@ -1008,16 +1018,31 @@ function initializeTouchControls() {
     const bindPressableButton = (button, handlers) => {
         const cancel = () => handlers.onCancel();
 
-        button.addEventListener('pointerdown', event => {
+        const onPress = event => {
             event.preventDefault();
             handlers.onPress();
-        });
-        button.addEventListener('pointerup', event => {
+        };
+
+        const onRelease = event => {
             event.preventDefault();
             handlers.onRelease();
-        });
-        button.addEventListener('pointercancel', cancel);
-        button.addEventListener('pointerleave', cancel);
+        };
+
+        if (window.PointerEvent) {
+            button.addEventListener('pointerdown', onPress);
+            button.addEventListener('pointerup', onRelease);
+            button.addEventListener('pointercancel', cancel);
+            button.addEventListener('pointerleave', cancel);
+            return;
+        }
+
+        // Legacy fallback for browsers without Pointer Events.
+        button.addEventListener('touchstart', onPress, { passive: false });
+        button.addEventListener('touchend', onRelease, { passive: false });
+        button.addEventListener('touchcancel', cancel, { passive: false });
+        button.addEventListener('mousedown', onPress);
+        button.addEventListener('mouseup', onRelease);
+        button.addEventListener('mouseleave', cancel);
     };
 
     bindPressableButton(leftButton, {
