@@ -14,6 +14,16 @@ let currentLanguage = localStorage.getItem('selectedLanguage') || 'en';
 let isGamePaused = false;
 let scoreSyncIntervalId = null;
 
+const touchInputState = {
+    enabled: false,
+    gameKey: GAME_KEYS.CAT,
+    leftPressed: false,
+    rightPressed: false,
+    jumpQueued: false,
+    laneLeftQueued: false,
+    laneRightQueued: false
+};
+
 const translations = {
     en: {
         btn: {
@@ -73,7 +83,7 @@ const translations = {
                 rulesTitle: 'Cat Adventure Rules 📋',
                 rules: {
                     objective: 'Objective: Guide your cat through increasingly difficult levels to reach the goal door.',
-                    controls: 'Controls: Use WASD or Arrow Keys to move left/right and jump.',
+                    controls: 'Controls: Use WASD or Arrow Keys, or the on-screen touch buttons, to move left/right and jump.',
                     platforms: 'Platforms: Jump across platforms to reach higher areas and avoid falling.',
                     enemies: 'Enemies: Ground enemies walk back and forth, flying enemies hover and bob in the sky. Touching any enemy costs a life.',
                     lives: 'Lives: You start with 3 lives. Lose all 3 and it\'s game over. Each new level resets your lives to 3.',
@@ -93,7 +103,7 @@ const translations = {
                 rulesTitle: 'Turbo Traffic Rules 📋',
                 rules: {
                     objective: 'Objective: Stay on the road as long as possible and survive longer than every other driver.',
-                    controls: 'Controls: Use A/D or Left/Right Arrow Keys to switch lanes.',
+                    controls: 'Controls: Use A/D or Left/Right Arrow Keys, or tap the on-screen touch buttons, to switch lanes.',
                     platforms: 'Road: The highway has three lanes. Commit to clean lane changes and avoid getting trapped.',
                     enemies: 'Traffic: Incoming cars and trucks pour down the road. Hitting any vehicle ends the run.',
                     lives: 'Lives: You only get one car per run. A crash sends you back to the start.',
@@ -173,7 +183,7 @@ const translations = {
                 rulesTitle: '猫咪冒险规则 📋',
                 rules: {
                     objective: '目标：引导您的猫通过越来越困难的关卡，达到终点门。',
-                    controls: '操作：使用 WASD 或方向键左右移动和跳跃。',
+                    controls: '操作：使用 WASD、方向键，或屏幕上的触控按钮来左右移动和跳跃。',
                     platforms: '平台：跳过平台以到达更高区域并避免跌落。',
                     enemies: '敌人：地面敌人来回移动，飞行敌人在空中上下浮动。触碰敌人会失去一条生命。',
                     lives: '生命：您开始时有 3 条生命。失去所有生命即游戏结束。每个新关卡生命重置为 3。',
@@ -193,7 +203,7 @@ const translations = {
                 rulesTitle: '极速车流规则 📋',
                 rules: {
                     objective: '目标：尽可能长时间保持在道路上，比其他驾驶者坚持得更久。',
-                    controls: '操作：使用 A/D 或左右方向键切换车道。',
+                    controls: '操作：使用 A/D、左右方向键，或点击屏幕上的触控按钮来切换车道。',
                     platforms: '道路：高速路有三条车道。要提前判断，避免被堵死。',
                     enemies: '车辆：迎面而来的汽车和卡车会不断出现。撞上任何车辆都会结束本局。',
                     lives: '生命：每局只有一辆车。撞车后就会从头开始。',
@@ -273,7 +283,7 @@ const translations = {
                 rulesTitle: '고양이 모험 규칙 📋',
                 rules: {
                     objective: '목표: 고양이를 어려워지는 단계로 이끌어 골문에 도달하세요.',
-                    controls: '조작: WASD 또는 방향키로 이동 및 점프하세요.',
+                    controls: '조작: WASD, 방향키 또는 화면의 터치 버튼으로 이동 및 점프하세요.',
                     platforms: '플랫폼: 플랫폼을 뛰어넘어 높은 곳으로 이동하고 낙사를 피하세요.',
                     enemies: '적: 땅 적은 좌우로 이동하고 비행 적은 위아래로 떠다닙니다. 접촉 시 목숨을 잃습니다.',
                     lives: '생명: 3개의 목숨으로 시작합니다. 모두 잃으면 게임 오버이며, 새 레벨마다 3으로 초기화됩니다.',
@@ -293,7 +303,7 @@ const translations = {
                 rulesTitle: '터보 트래픽 규칙 📋',
                 rules: {
                     objective: '목표: 가능한 오래 도로 위에 남아 다른 드라이버보다 더 긴 기록을 세우세요.',
-                    controls: '조작: A/D 또는 좌우 방향키로 차선을 변경하세요.',
+                    controls: '조작: A/D, 좌우 방향키 또는 화면의 터치 버튼으로 차선을 변경하세요.',
                     platforms: '도로: 고속도로는 세 개 차선으로 구성됩니다. 막히지 않도록 미리 차선을 선택하세요.',
                     enemies: '교통: 맞은편 차량과 트럭이 계속 내려옵니다. 어떤 차량과 부딪혀도 즉시 종료됩니다.',
                     lives: '생명: 한 번의 주행에 한 대의 차량만 주어집니다. 충돌하면 처음부터 다시 시작합니다.',
@@ -910,6 +920,168 @@ function getActivePageName() {
     return activePage ? activePage.id : 'landing-page';
 }
 
+function isTouchDevice() {
+    if (typeof window === 'undefined') {
+        return false;
+    }
+
+    if (window.matchMedia && window.matchMedia('(pointer: coarse)').matches) {
+        return true;
+    }
+
+    return (navigator.maxTouchPoints || 0) > 0;
+}
+
+function resetTouchInputs() {
+    touchInputState.leftPressed = false;
+    touchInputState.rightPressed = false;
+    touchInputState.jumpQueued = false;
+    touchInputState.laneLeftQueued = false;
+    touchInputState.laneRightQueued = false;
+
+    ['touch-left-btn', 'touch-right-btn', 'touch-jump-btn'].forEach(id => {
+        const button = document.getElementById(id);
+        if (button) {
+            button.classList.remove('touch-active');
+        }
+    });
+}
+
+function updateTouchControls(gameKey = activeGameKey) {
+    const touchControls = document.getElementById('touch-controls');
+    const jumpButton = document.getElementById('touch-jump-btn');
+    if (!touchControls || !jumpButton) {
+        return;
+    }
+
+    const shouldShow = isTouchDevice() && getActivePageName() === 'game-page';
+    touchInputState.enabled = shouldShow;
+    touchInputState.gameKey = gameKey;
+    touchControls.classList.toggle('hidden', !shouldShow);
+    touchControls.dataset.game = gameKey;
+    jumpButton.hidden = gameKey !== GAME_KEYS.CAT;
+
+    if (!shouldShow) {
+        resetTouchInputs();
+    }
+}
+
+function initializeTouchControls() {
+    const leftButton = document.getElementById('touch-left-btn');
+    const rightButton = document.getElementById('touch-right-btn');
+    const jumpButton = document.getElementById('touch-jump-btn');
+
+    if (!leftButton || !rightButton || !jumpButton) {
+        return;
+    }
+
+    const setHoldState = (direction, pressed) => {
+        if (!touchInputState.enabled || touchInputState.gameKey !== GAME_KEYS.CAT) {
+            return;
+        }
+
+        if (direction === 'left') {
+            touchInputState.leftPressed = pressed;
+            leftButton.classList.toggle('touch-active', pressed);
+        } else {
+            touchInputState.rightPressed = pressed;
+            rightButton.classList.toggle('touch-active', pressed);
+        }
+    };
+
+    const queueLaneMove = direction => {
+        if (!touchInputState.enabled || touchInputState.gameKey !== GAME_KEYS.CAR) {
+            return;
+        }
+
+        if (direction === 'left') {
+            touchInputState.laneLeftQueued = true;
+            leftButton.classList.add('touch-active');
+            window.setTimeout(() => leftButton.classList.remove('touch-active'), 110);
+        } else {
+            touchInputState.laneRightQueued = true;
+            rightButton.classList.add('touch-active');
+            window.setTimeout(() => rightButton.classList.remove('touch-active'), 110);
+        }
+    };
+
+    const bindPressableButton = (button, handlers) => {
+        const cancel = () => handlers.onCancel();
+
+        button.addEventListener('pointerdown', event => {
+            event.preventDefault();
+            handlers.onPress();
+        });
+        button.addEventListener('pointerup', event => {
+            event.preventDefault();
+            handlers.onRelease();
+        });
+        button.addEventListener('pointercancel', cancel);
+        button.addEventListener('pointerleave', cancel);
+    };
+
+    bindPressableButton(leftButton, {
+        onPress: () => {
+            if (touchInputState.gameKey === GAME_KEYS.CAT) {
+                setHoldState('left', true);
+                return;
+            }
+
+            queueLaneMove('left');
+        },
+        onRelease: () => setHoldState('left', false),
+        onCancel: () => setHoldState('left', false)
+    });
+
+    bindPressableButton(rightButton, {
+        onPress: () => {
+            if (touchInputState.gameKey === GAME_KEYS.CAT) {
+                setHoldState('right', true);
+                return;
+            }
+
+            queueLaneMove('right');
+        },
+        onRelease: () => setHoldState('right', false),
+        onCancel: () => setHoldState('right', false)
+    });
+
+    bindPressableButton(jumpButton, {
+        onPress: () => {
+            if (!touchInputState.enabled || touchInputState.gameKey !== GAME_KEYS.CAT) {
+                return;
+            }
+
+            touchInputState.jumpQueued = true;
+            jumpButton.classList.add('touch-active');
+        },
+        onRelease: () => jumpButton.classList.remove('touch-active'),
+        onCancel: () => jumpButton.classList.remove('touch-active')
+    });
+
+    window.ArcadeTouchControls = {
+        isLeftActive: () => touchInputState.enabled && touchInputState.gameKey === GAME_KEYS.CAT && touchInputState.leftPressed,
+        isRightActive: () => touchInputState.enabled && touchInputState.gameKey === GAME_KEYS.CAT && touchInputState.rightPressed,
+        consumeJump: () => {
+            const shouldJump = touchInputState.enabled && touchInputState.gameKey === GAME_KEYS.CAT && touchInputState.jumpQueued;
+            touchInputState.jumpQueued = false;
+            return shouldJump;
+        },
+        consumeLaneLeft: () => {
+            const shouldMove = touchInputState.enabled && touchInputState.gameKey === GAME_KEYS.CAR && touchInputState.laneLeftQueued;
+            touchInputState.laneLeftQueued = false;
+            return shouldMove;
+        },
+        consumeLaneRight: () => {
+            const shouldMove = touchInputState.enabled && touchInputState.gameKey === GAME_KEYS.CAR && touchInputState.laneRightQueued;
+            touchInputState.laneRightQueued = false;
+            return shouldMove;
+        },
+        reset: resetTouchInputs,
+        updateForGame: updateTouchControls
+    };
+}
+
 function showPage(pageName) {
     const currentPage = getActivePageName();
     if ((pageName === 'rules' || pageName === 'leaderboard') && currentPage !== pageName) {
@@ -926,6 +1098,8 @@ function showPage(pageName) {
         updateRulesAndLeaderboard();
         updateLeaderboardTable();
     }
+
+    updateTouchControls(window.currentRunningGameKey || activeGameKey);
 }
 
 function resetGameState(gameKey) {
@@ -946,6 +1120,7 @@ function returnHome() {
     }
 
     isGamePaused = false;
+    resetTouchInputs();
 
     updateRulesAndLeaderboard();
     showPage('landing-page');
@@ -983,6 +1158,7 @@ function stopCurrentRun() {
     }
 
     isGamePaused = false;
+    resetTouchInputs();
     showPage(GAME_PAGES[runningGameKey] || 'landing-page');
     applyLanguage(currentLanguage);
 }
@@ -996,6 +1172,7 @@ function restartCurrentRun() {
     }
 
     isGamePaused = false;
+    resetTouchInputs();
     showPage('game-page');
 
     if (window.startGame) {
@@ -1006,6 +1183,8 @@ function restartCurrentRun() {
 }
 
 document.addEventListener('DOMContentLoaded', () => {
+    initializeTouchControls();
+
     document.querySelectorAll('.open-game-btn').forEach(button => {
         button.addEventListener('click', () => {
             const gameKey = button.dataset.game;

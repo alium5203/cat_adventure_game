@@ -186,6 +186,9 @@ class TrafficRunnerScene extends Phaser.Scene {
 
     create() {
         TrafficRunnerScene.setLanguage(localStorage.getItem('selectedLanguage') || 'en');
+        if (window.ArcadeTouchControls && typeof window.ArcadeTouchControls.reset === 'function') {
+            window.ArcadeTouchControls.reset();
+        }
         this.physics.world.gravity.y = 0;
         this.cameras.main.setBackgroundColor('#89c2ff');
 
@@ -1236,10 +1239,20 @@ class TrafficRunnerScene extends Phaser.Scene {
             return;
         }
 
-        if (Phaser.Input.Keyboard.JustDown(this.cursors.left) || Phaser.Input.Keyboard.JustDown(this.keys.a)) {
+        const touchControls = window.ArcadeTouchControls;
+
+        if (
+            Phaser.Input.Keyboard.JustDown(this.cursors.left) ||
+            Phaser.Input.Keyboard.JustDown(this.keys.a) ||
+            (touchControls && typeof touchControls.consumeLaneLeft === 'function' && touchControls.consumeLaneLeft())
+        ) {
             this.movePlayerLane(-1);
         }
-        if (Phaser.Input.Keyboard.JustDown(this.cursors.right) || Phaser.Input.Keyboard.JustDown(this.keys.d)) {
+        if (
+            Phaser.Input.Keyboard.JustDown(this.cursors.right) ||
+            Phaser.Input.Keyboard.JustDown(this.keys.d) ||
+            (touchControls && typeof touchControls.consumeLaneRight === 'function' && touchControls.consumeLaneRight())
+        ) {
             this.movePlayerLane(1);
         }
 

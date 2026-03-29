@@ -542,6 +542,60 @@
             transform: translateY(0);
         }
 
+        #touch-controls {
+            position: absolute;
+            left: 20px;
+            right: 20px;
+            bottom: 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-end;
+            gap: 16px;
+            z-index: 270;
+            pointer-events: none;
+        }
+
+        #touch-controls.hidden {
+            display: none;
+        }
+
+        .touch-cluster {
+            display: flex;
+            gap: 12px;
+            pointer-events: auto;
+        }
+
+        .touch-btn {
+            min-width: 78px;
+            min-height: 78px;
+            border: none;
+            border-radius: 22px;
+            background: rgba(15, 23, 42, 0.78);
+            color: #ffffff;
+            font-size: 34px;
+            font-weight: 800;
+            box-shadow: 0 14px 30px rgba(15, 23, 42, 0.3);
+            backdrop-filter: blur(8px);
+            -webkit-backdrop-filter: blur(8px);
+            touch-action: none;
+            user-select: none;
+            -webkit-user-select: none;
+        }
+
+        .touch-btn:active,
+        .touch-btn.touch-active {
+            transform: scale(0.96);
+            background: rgba(37, 99, 235, 0.9);
+        }
+
+        #touch-jump-btn {
+            min-width: 92px;
+            min-height: 92px;
+            border-radius: 28px;
+            font-size: 40px;
+            background: rgba(22, 163, 74, 0.85);
+        }
+
         .game-hud {
             padding: 8px 12px;
             border-radius: 10px;
@@ -746,6 +800,46 @@
             .main-button,
             .hub-button {
                 width: 100%;
+            }
+
+            #game-page .page-ui {
+                padding: 8px 12px;
+                gap: 8px;
+            }
+
+            #game-ui-left,
+            #game-ui-right {
+                gap: 8px;
+                font-size: 15px;
+                flex-wrap: wrap;
+            }
+
+            .game-hud,
+            .hud-btn {
+                font-size: 13px;
+            }
+
+            #touch-controls {
+                left: 12px;
+                right: 12px;
+                bottom: 12px;
+                gap: 10px;
+            }
+
+            .touch-cluster {
+                gap: 10px;
+            }
+
+            .touch-btn {
+                min-width: 68px;
+                min-height: 68px;
+                font-size: 30px;
+                border-radius: 20px;
+            }
+
+            #touch-jump-btn {
+                min-width: 84px;
+                min-height: 84px;
             }
         }
 
@@ -982,7 +1076,7 @@
             <div class="rules-list">
                 <ul>
                     <li id="rule-objective"><strong>Objective:</strong> Guide your cat through increasingly difficult levels to reach the goal door.</li>
-                    <li id="rule-controls"><strong>Controls:</strong> Use WASD or Arrow Keys to move left/right and jump.</li>
+                    <li id="rule-controls"><strong>Controls:</strong> Use WASD or Arrow Keys, or the on-screen touch buttons, to move and jump.</li>
                     <li id="rule-platforms"><strong>Platforms:</strong> Jump across platforms to reach higher areas and avoid falling.</li>
                     <li id="rule-enemies"><strong>Enemies:</strong> Ground enemies walk back and forth, flying enemies hover and bob in the sky. Touching any enemy costs a life.</li>
                     <li id="rule-lives"><strong>Lives:</strong> You start with 3 lives. Lose all 3 and it's game over! Each new level resets your lives to 3.</li>
@@ -1064,6 +1158,15 @@
             </div>
         </div>
         <div id="game-container"></div>
+        <div id="touch-controls" class="hidden" aria-label="Touch game controls">
+            <div class="touch-cluster">
+                <button id="touch-left-btn" class="touch-btn" type="button" aria-label="Move left">←</button>
+                <button id="touch-right-btn" class="touch-btn" type="button" aria-label="Move right">→</button>
+            </div>
+            <div class="touch-cluster">
+                <button id="touch-jump-btn" class="touch-btn" type="button" aria-label="Jump">↑</button>
+            </div>
+        </div>
     </div>
 
     <div id="app-toast" aria-live="polite" aria-atomic="true"></div>

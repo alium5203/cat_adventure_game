@@ -59,6 +59,10 @@ class GameScene extends Phaser.Scene {
 
     create() {
         try {
+            if (window.ArcadeTouchControls && typeof window.ArcadeTouchControls.reset === 'function') {
+                window.ArcadeTouchControls.reset();
+            }
+
             // Use static variables to persist state across scene restarts
             this.currentLevel = GameScene.currentLevel;
             this.score = GameScene.currentScore;
@@ -136,6 +140,12 @@ class GameScene extends Phaser.Scene {
 
         } catch (error) {
             console.error('Error in create():', error);
+        }
+    }
+
+    tryJump() {
+        if (this.player && this.player.body && this.player.body.touching.down) {
+            this.player.body.setVelocityY(-350);
         }
     }
 
@@ -745,12 +755,19 @@ class GameScene extends Phaser.Scene {
 
             // Player movement with both WASD and arrow keys
             let isMoving = false;
+            const touchControls = window.ArcadeTouchControls;
+            const touchLeft = !!(touchControls && typeof touchControls.isLeftActive === 'function' && touchControls.isLeftActive());
+            const touchRight = !!(touchControls && typeof touchControls.isRightActive === 'function' && touchControls.isRightActive());
+
+            if (touchControls && typeof touchControls.consumeJump === 'function' && touchControls.consumeJump()) {
+                this.tryJump();
+            }
             
             // Check WASD keys
-            if (this.keys.a.isDown || this.cursors.left.isDown) {
+            if ((this.keys.a.isDown || this.cursors.left.isDown || touchLeft) && !touchRight) {
                 this.player.body.setVelocityX(-200);
                 isMoving = true;
-            } else if (this.keys.d.isDown || this.cursors.right.isDown) {
+            } else if ((this.keys.d.isDown || this.cursors.right.isDown || touchRight) && !touchLeft) {
                 this.player.body.setVelocityX(200);
                 isMoving = true;
             }
