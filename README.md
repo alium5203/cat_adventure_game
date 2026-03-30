@@ -61,39 +61,39 @@ Notes:
 - The other games remain frontend-only and are just served as static files.
 - Big 2 now supports server-authoritative turn-by-turn gameplay for remote players sharing the same backend URL.
 
-## Deploy (Recommended: Render Web Service)
+## Deploy (Heroku)
 
-This app is most reliable when deployed as a single Node service, because Big 2 needs backend APIs.
+This app runs best as a Node web dyno so the Big 2 backend routes stay online.
 
-Why Render is recommended:
+Prerequisites:
 
-- Runs both static files and Big 2 backend in one service.
-- Automatic deploy on push to main.
-- Built-in live logs and restart controls.
-- Free TLS and stable public URL.
+- Heroku CLI installed
+- Logged in with `heroku login`
 
-Setup:
+Deploy steps:
 
-1. Push this project to GitHub.
-2. Go to Render and click New +, then Web Service.
-3. Select repo: alium5203/cat_adventure_game.
-4. Render will auto-detect render.yaml in this project.
-5. Confirm settings:
-   - Build command: npm install
-   - Start command: npm start
-6. Deploy.
+1. From project root (`cat-game`), create app:
+   - `heroku create <your-app-name>`
+2. Push main branch:
+   - `git push heroku main`
+3. Open app:
+   - `heroku open`
 
-After deploy:
+Public URL:
 
-- App URL: https://<your-render-service>.onrender.com
-- Health check: https://<your-render-service>.onrender.com/api/big2/health
+- `https://<your-app-name>.herokuapp.com`
+- Health check: `https://<your-app-name>.herokuapp.com/api/big2/health`
 
 Live logs:
 
-1. Render Dashboard -> your service -> Logs
-2. Tail logs in real time while players create/join/play Big 2 lobbies.
+- Stream logs: `heroku logs --tail -a <your-app-name>`
+
+Notes:
+
+- `Procfile` is included (`web: npm start`).
+- Server listens on `process.env.PORT`, which Heroku injects.
 
 ## Other Hosts
 
-- Railway and Fly.io are also good for Node hosting.
+- Render, Railway, Fly.io, and AWS Lightsail are also good Node hosting options.
 - GitHub Pages, Netlify, and Vercel static mode do not run the Big 2 backend routes.

@@ -1,0 +1,14 @@
+{
+  "name": "cat-game-arcade",
+  "description": "Cat Game arcade with Big 2 backend APIs",
+  "repository": "https://github.com/alium5203/cat_adventure_game",
+  "env": {},
+  "formation": {
+    "web": {
+      "quantity": 1,
+      "size": "basic"
+    }
+  },
+  "scripts": {},
+  "stack": "heroku-24"
+}
