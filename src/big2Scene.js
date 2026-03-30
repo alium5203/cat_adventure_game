@@ -25,6 +25,7 @@ const BIG2 = {
 };
 
 const BIG2_API_BASE = '/api/big2';
+const BIG2_DEPLOYED_ORIGIN = 'https://agile-brushlands-24267-9cfa491ed233.herokuapp.com';
 
 const BIG2_I18N = {
     en: {
@@ -69,6 +70,7 @@ const BIG2_I18N = {
         waitingPlayers: 'Waiting for players...',
         backendOnline: 'Online backend active',
         backendLocal: 'Local-only fallback mode',
+        backendRequiredHosted: 'Backend unavailable on this site. Open {url} and try again. Details: {error}',
         lobbyNoticeOnline: 'This lobby is synced through the Big 2 backend.',
         lobbyNoticeLocal: 'Server not reached. This lobby only works on this device/browser.',
         gameCode: 'Game Code',
@@ -146,7 +148,7 @@ const BIG2_I18N = {
         playerNamePlaceholder: '玩家{n}名字', playerDefault: '玩家{n}', joinTitle: '加入游戏', joinSub: '向房主获取4位房间码。',
         yourName: '你的名字', yourNamePlaceholder: '你的名字', gameCodeLabel: '房间码（例如：7A4B）', validCodeError: '请输入有效的4位房间码。',
         joinConfirm: '加入 ✓', joining: '加入中...', lobbyTitle: '游戏大厅', waitingPlayers: '等待玩家中...', backendOnline: '在线后端已连接',
-        backendLocal: '仅本地兼容模式', lobbyNoticeOnline: '此房间通过大老二后端实时同步。', lobbyNoticeLocal: '未连接到服务器。此房间仅在本设备浏览器可用。',
+        backendLocal: '仅本地兼容模式', backendRequiredHosted: '当前站点后端不可用。请打开 {url} 后重试。详情：{error}', lobbyNoticeOnline: '此房间通过大老二后端实时同步。', lobbyNoticeLocal: '未连接到服务器。此房间仅在本设备浏览器可用。',
         gameCode: '房间码', playersLabel: '玩家（{current}/{max}）', hostStartGame: '房主开始游戏 🎮', cancel: '取消', starting: '启动中...',
         unableRefreshLobby: '无法刷新大厅。', unableStartGame: '无法开始游戏。', connectingGame: '正在连接游戏...', loadingState: '正在加载状态...',
         reconnecting: '重新连接中...', reconnectingSub: '暂时无法识别你的座位，正在刷新游戏状态。', cardCountSingle: '{count} 张牌', cardCountPlural: '{count} 张牌',
@@ -176,7 +178,7 @@ const BIG2_I18N = {
         playerNamePlaceholder: '플레이어 {n} 이름', playerDefault: '플레이어 {n}', joinTitle: '게임 참가', joinSub: '호스트에게 4자리 게임 코드를 받으세요.',
         yourName: '내 이름', yourNamePlaceholder: '이름 입력', gameCodeLabel: '게임 코드 (예: 7A4B)', validCodeError: '유효한 4자리 코드를 입력하세요.',
         joinConfirm: '참가 ✓', joining: '참가 중...', lobbyTitle: '게임 로비', waitingPlayers: '플레이어 대기 중...', backendOnline: '온라인 백엔드 연결됨',
-        backendLocal: '로컬 전용 대체 모드', lobbyNoticeOnline: '이 로비는 빅투 백엔드와 동기화됩니다.', lobbyNoticeLocal: '서버에 연결되지 않았습니다. 이 로비는 현재 기기/브라우저에서만 작동합니다.',
+        backendLocal: '로컬 전용 대체 모드', backendRequiredHosted: '이 사이트에서는 백엔드를 사용할 수 없습니다. {url}을(를) 열어 다시 시도하세요. 상세: {error}', lobbyNoticeOnline: '이 로비는 빅투 백엔드와 동기화됩니다.', lobbyNoticeLocal: '서버에 연결되지 않았습니다. 이 로비는 현재 기기/브라우저에서만 작동합니다.',
         gameCode: '게임 코드', playersLabel: '플레이어 ({current}/{max})', hostStartGame: '호스트 게임 시작 🎮', cancel: '취소', starting: '시작 중...',
         unableRefreshLobby: '로비를 새로고침할 수 없습니다.', unableStartGame: '게임을 시작할 수 없습니다.', connectingGame: '게임에 연결 중...', loadingState: '상태를 불러오는 중...',
         reconnecting: '재연결 중...', reconnectingSub: '내 좌석을 아직 확인하지 못했습니다. 게임 상태를 새로고침합니다.', cardCountSingle: '{count}장', cardCountPlural: '{count}장',
@@ -403,6 +405,19 @@ async function big2ApiRequest(path, options = {}) {
     return data;
 }
 
+function canUseLocalFallback() {
+    if (typeof window === 'undefined') return true;
+    const host = window.location.hostname;
+    return host === 'localhost' || host === '127.0.0.1';
+}
+
+function hostedBackendError(error) {
+    return b2t('backendRequiredHosted', {
+        url: BIG2_DEPLOYED_ORIGIN,
+        error: b2TranslateError(error?.message || '')
+    });
+}
+
 async function createGameLobbySession(hostName, numPlayers) {
     try {
         const data = await big2ApiRequest('/lobbies', {
@@ -411,6 +426,9 @@ async function createGameLobbySession(hostName, numPlayers) {
         });
         return { ok: true, lobby: data.lobby, playerId: data.playerId, backend: true };
     } catch (error) {
+        if (!canUseLocalFallback()) {
+            return { ok: false, error: hostedBackendError(error) };
+        }
         const lobby = createGameLobby(hostName, numPlayers);
         return {
             ok: true,
@@ -430,6 +448,9 @@ async function joinGameLobbySession(code, playerName) {
         });
         return { ok: true, lobby: data.lobby, playerId: data.playerId, backend: true };
     } catch (error) {
+        if (!canUseLocalFallback()) {
+            return { ok: false, error: hostedBackendError(error) };
+        }
         const result = joinGameLobby(code, playerName);
         if (!result.ok) {
             return result;
@@ -450,6 +471,9 @@ async function getGameLobbySession(code) {
         const data = await big2ApiRequest(`/lobbies/${code}`);
         return { ok: true, lobby: data.lobby, backend: true };
     } catch (error) {
+        if (!canUseLocalFallback()) {
+            return { ok: false, error: hostedBackendError(error) };
+        }
         const lobby = getLobbyByCode((code || '').toUpperCase().trim());
         if (!lobby) {
             return { ok: false, error: b2t('gameCodeNotFound') };
@@ -471,6 +495,9 @@ async function startGameLobbySession(code, playerId) {
         });
         return { ok: true, lobby: data.lobby, backend: true };
     } catch (error) {
+        if (!canUseLocalFallback()) {
+            return { ok: false, error: hostedBackendError(error) };
+        }
         const lobby = getLobbyByCode((code || '').toUpperCase().trim());
         if (!lobby) {
             return { ok: false, error: b2t('gameCodeNotFound') };
