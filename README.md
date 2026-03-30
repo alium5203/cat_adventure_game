@@ -61,23 +61,39 @@ Notes:
 - The other games remain frontend-only and are just served as static files.
 - Big 2 now supports server-authoritative turn-by-turn gameplay for remote players sharing the same backend URL.
 
-## Deploy (GitHub Pages)
+## Deploy (Recommended: Render Web Service)
 
-This project is static (HTML/CSS/JS), so it is ready for GitHub Pages.
+This app is most reliable when deployed as a single Node service, because Big 2 needs backend APIs.
 
-1. Push this project to a GitHub repository.
-2. Keep the default branch as `main`.
-3. In GitHub: `Settings` -> `Pages` -> `Build and deployment` -> `Source: GitHub Actions`.
-4. Push any commit to `main`.
-5. GitHub Actions will run `.github/workflows/deploy-pages.yml` and publish the site.
+Why Render is recommended:
 
-Your live URL will be:
+- Runs both static files and Big 2 backend in one service.
+- Automatic deploy on push to main.
+- Built-in live logs and restart controls.
+- Free TLS and stable public URL.
 
-`https://<your-github-username>.github.io/<your-repo-name>/`
+Setup:
 
-## Quick Alternative Deploy Options
+1. Push this project to GitHub.
+2. Go to Render and click New +, then Web Service.
+3. Select repo: alium5203/cat_adventure_game.
+4. Render will auto-detect render.yaml in this project.
+5. Confirm settings:
+   - Build command: npm install
+   - Start command: npm start
+6. Deploy.
 
-- Netlify: drag and drop the project folder.
-- Vercel: import the repo as a static site.
+After deploy:
 
-If you want Big 2 backend lobbies online for other devices, deploy `server.js` to a Node-capable host instead of a static-only host.
+- App URL: https://<your-render-service>.onrender.com
+- Health check: https://<your-render-service>.onrender.com/api/big2/health
+
+Live logs:
+
+1. Render Dashboard -> your service -> Logs
+2. Tail logs in real time while players create/join/play Big 2 lobbies.
+
+## Other Hosts
+
+- Railway and Fly.io are also good for Node hosting.
+- GitHub Pages, Netlify, and Vercel static mode do not run the Big 2 backend routes.
