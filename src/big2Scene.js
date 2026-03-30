@@ -25,7 +25,7 @@ const BIG2 = {
 };
 
 const BIG2_API_BASE = '/api/big2';
-const BIG2_DEPLOYED_ORIGIN = 'https://agile-brushlands-24267-9cfa491ed233.herokuapp.com';
+const BIG2_DEPLOYED_ORIGIN = 'https://www.cocoabeans.org';
 
 const BIG2_I18N = {
     en: {
