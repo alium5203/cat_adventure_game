@@ -1,4 +1,4 @@
-const CACHE_NAME = 'coriander-arcade-v4';
+const CACHE_NAME = 'coriander-arcade-v5';
 
 const APP_SHELL = [
   './',
@@ -10,7 +10,9 @@ const APP_SHELL = [
   './src/main.js',
   './src/navigation.js',
   './src/gameScene.js',
-  './src/trafficRunnerScene.js'
+  './src/trafficRunnerScene.js',
+  './src/starPawsShooterScene.js',
+  './src/big2Scene.js'
 ];
 
 self.addEventListener('install', event => {

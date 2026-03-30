@@ -42,6 +42,25 @@ The level features:
 
 Enjoy! 🎮
 
+## Run Locally
+
+Static-only mode:
+
+1. Open `index.html` directly, or serve the folder with a static server.
+2. Cat Adventure, Turbo Traffic, Star Paws Shooter, and local Big 2 all work.
+
+Big 2 backend mode:
+
+1. Run `npm start`
+2. Open `http://localhost:8000`
+3. The Node server serves the existing site and adds Big 2 lobby APIs at `/api/big2`
+
+Notes:
+
+- The backend powers Big 2 lobby create/join/start and turn-by-turn play sync.
+- The other games remain frontend-only and are just served as static files.
+- Big 2 now supports server-authoritative turn-by-turn gameplay for remote players sharing the same backend URL.
+
 ## Deploy (GitHub Pages)
 
 This project is static (HTML/CSS/JS), so it is ready for GitHub Pages.
@@ -60,3 +79,5 @@ Your live URL will be:
 
 - Netlify: drag and drop the project folder.
 - Vercel: import the repo as a static site.
+
+If you want Big 2 backend lobbies online for other devices, deploy `server.js` to a Node-capable host instead of a static-only host.

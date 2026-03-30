@@ -6,6 +6,10 @@ const gameConfigs = {
     'turbo-traffic': {
         scene: TrafficRunnerScene,
         gravityY: 0
+    },
+    'star-paws-shooter': {
+        scene: ShootingScene,
+        gravityY: 0
     }
 };
 

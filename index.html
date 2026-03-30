@@ -4,10 +4,9 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Cat Adventure Game</title>
-    <meta name="theme-color" content="#667eea">
-    <link rel="manifest" href="manifest.json">
-    <link rel="icon" type="image/svg+xml" href="assets/icons/icon-192.svg">
-    <link rel="apple-touch-icon" href="assets/icons/icon-192.svg">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700&display=swap" rel="stylesheet">
     <style>
         * {
             margin: 0;
@@ -39,36 +38,34 @@
             display: flex;
         }
         
-        /* Landing Page */
-        #landing-page {
+        /* Homepage / Hub Styles */
+        #homepage {
             flex-direction: column;
-            justify-content: center;
             align-items: center;
             background:
-                radial-gradient(circle at top left, rgba(255, 255, 255, 0.65), transparent 35%),
-                radial-gradient(circle at bottom right, rgba(255, 209, 102, 0.35), transparent 30%),
+                radial-gradient(circle at top left, rgba(255,255,255,0.65), transparent 35%),
+                radial-gradient(circle at bottom right, rgba(255,209,102,0.35), transparent 30%),
                 linear-gradient(140deg, #fef6e4 0%, #f3d2c1 45%, #8bd3dd 100%);
             overflow-y: auto;
         }
 
-        #landing-page.active {
+        #homepage.active {
             display: flex;
         }
 
         .landing-shell {
             width: min(1180px, 100%);
-            min-height: 100vh;
-            padding: 120px 32px 48px;
+            min-height: calc(100vh - 60px);
+            padding: 32px 32px 48px;
             display: flex;
             flex-direction: column;
-            justify-content: center;
             gap: 32px;
         }
 
         .landing-hero {
             display: flex;
             flex-direction: column;
-            gap: 16px;
+            gap: 14px;
             max-width: 720px;
         }
 
@@ -77,7 +74,7 @@
             align-self: flex-start;
             padding: 8px 14px;
             border-radius: 999px;
-            background: rgba(38, 70, 83, 0.08);
+            background: rgba(38,70,83,0.08);
             color: #264653;
             font-size: 14px;
             font-weight: 800;
@@ -86,110 +83,79 @@
         }
 
         .hub-title {
-            font-size: clamp(52px, 8vw, 86px);
+            font-size: clamp(48px, 7vw, 80px);
             font-weight: 800;
-            line-height: 0.95;
+            line-height: 1;
             color: #1f2933;
-            text-shadow: 0 12px 30px rgba(38, 70, 83, 0.12);
         }
 
         .hub-copy {
-            max-width: 640px;
-            font-size: 20px;
+            font-size: 18px;
             line-height: 1.6;
             color: #334e68;
+            max-width: 540px;
         }
 
-        .games-section {
-            display: flex;
-            flex-direction: column;
-            gap: 18px;
-        }
-
-        .section-heading {
-            display: flex;
-            flex-direction: column;
-            gap: 8px;
-        }
-
-        .section-heading h2 {
-            font-size: 32px;
-            color: #102a43;
-        }
-
-        .section-heading p {
-            font-size: 18px;
-            color: #486581;
-        }
+        .games-section { display: flex; flex-direction: column; gap: 18px; }
 
         .games-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            grid-template-columns: repeat(auto-fit, minmax(270px, 1fr));
             gap: 24px;
         }
 
         .game-card {
             display: flex;
             flex-direction: column;
-            gap: 24px;
-            padding: 28px;
+            gap: 20px;
+            padding: 26px;
             border-radius: 28px;
-            border: 1px solid rgba(16, 42, 67, 0.08);
-            background: rgba(255, 255, 255, 0.72);
-            box-shadow: 0 24px 60px rgba(16, 42, 67, 0.14);
+            border: 1px solid rgba(16,42,67,0.08);
+            background: rgba(255,255,255,0.72);
+            box-shadow: 0 20px 50px rgba(16,42,67,0.12);
             backdrop-filter: blur(10px);
         }
 
         .game-card.featured {
-            background: linear-gradient(160deg, rgba(255, 255, 255, 0.92) 0%, rgba(255, 247, 237, 0.92) 100%);
-            border-color: rgba(244, 162, 97, 0.28);
-        }
-
-        .game-card.coming-soon {
-            border-style: dashed;
-            background: rgba(244, 244, 245, 0.7);
+            background: linear-gradient(160deg, rgba(255,255,255,0.92) 0%, rgba(255,247,237,0.92) 100%);
+            border-color: rgba(244,162,97,0.28);
         }
 
         .game-card-art {
-            width: 84px;
-            height: 84px;
+            width: 80px;
+            height: 80px;
             display: grid;
             place-items: center;
-            border-radius: 24px;
-            font-size: 46px;
+            border-radius: 22px;
+            font-size: 44px;
             background: linear-gradient(135deg, #ffd166 0%, #f4a261 100%);
-            box-shadow: inset 0 2px 8px rgba(255, 255, 255, 0.45);
-        }
-
-        .game-card.coming-soon .game-card-art {
-            background: linear-gradient(135deg, #dfe7fd 0%, #b8c0ff 100%);
+            box-shadow: inset 0 2px 8px rgba(255,255,255,0.45);
+            flex-shrink: 0;
         }
 
         .game-card-body {
             display: flex;
             flex-direction: column;
-            gap: 12px;
+            gap: 10px;
+            flex: 1;
         }
 
         .game-status {
-            font-size: 14px;
+            font-size: 13px;
             font-weight: 800;
             letter-spacing: 0.08em;
             text-transform: uppercase;
             color: #b45309;
         }
 
-        .game-card.coming-soon .game-status {
-            color: #5b5f97;
-        }
-
         .game-card h3 {
-            font-size: 34px;
+            font-size: 30px;
             color: #102a43;
+            line-height: 1.1;
         }
 
         .game-card p {
-            font-size: 18px;
+            font-size: 16px;
             line-height: 1.6;
             color: #486581;
         }
@@ -197,99 +163,33 @@
         .game-card-meta {
             display: flex;
             flex-wrap: wrap;
-            gap: 10px;
+            gap: 8px;
         }
 
         .game-card-meta span {
-            padding: 8px 14px;
+            padding: 6px 12px;
             border-radius: 999px;
-            background: rgba(16, 42, 67, 0.08);
+            background: rgba(16,42,67,0.07);
             color: #102a43;
-            font-size: 14px;
+            font-size: 13px;
             font-weight: 700;
         }
 
         .hub-button {
             align-self: flex-start;
-            padding: 16px 28px;
-            font-size: 20px;
+            padding: 14px 24px;
+            font-size: 18px;
             background: linear-gradient(135deg, #264653 0%, #1d3557 100%);
             color: white;
+            border-radius: 14px;
         }
 
-        /* Cat Adventure Page */
-        #homepage {
-            flex-direction: column;
-            justify-content: center;
-            align-items: center;
-            background:
-                radial-gradient(circle at top center, rgba(255, 255, 255, 0.4), transparent 28%),
-                linear-gradient(180deg, #87ceeb 0%, #b8f2e6 100%);
-            padding: 24px;
-        }
-
-        #homepage.active {
-            display: flex;
-        }
-
-        .game-home-shell {
-            width: min(1120px, 100%);
-            position: relative;
-        }
-
-        .homepage-content {
-            text-align: center;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            gap: 28px;
-            padding: 72px 32px 40px;
-            border-radius: 32px;
-            background: rgba(255, 255, 255, 0.72);
-            box-shadow: 0 22px 60px rgba(15, 23, 42, 0.18);
-            backdrop-filter: blur(10px);
-        }
-
-        .game-title {
-            font-size: clamp(54px, 7vw, 76px);
-            font-weight: 800;
-            color: #264653;
-            text-shadow: 3px 3px 6px rgba(0, 0, 0, 0.12);
+        @media (max-width: 600px) {
+            .landing-shell { padding: 16px 16px 32px; }
+            .games-grid { grid-template-columns: 1fr; }
+            .hub-button { align-self: stretch; text-align: center; }
         }
         
-        .cat-emoji {
-            font-size: 100px;
-            animation: bounce 2s infinite;
-        }
-        
-        @keyframes bounce {
-            0%, 100% { transform: translateY(0); }
-            50% { transform: translateY(-20px); }
-        }
-        
-        .game-page-copy {
-            max-width: 720px;
-            font-size: 21px;
-            line-height: 1.6;
-            color: #355070;
-        }
-
-        .game-feature-row {
-            display: flex;
-            justify-content: center;
-            flex-wrap: wrap;
-            gap: 14px;
-        }
-
-        .game-feature {
-            padding: 12px 16px;
-            border-radius: 16px;
-            background: rgba(38, 70, 83, 0.08);
-            color: #1f2933;
-            font-size: 16px;
-            font-weight: 700;
-        }
-
         .button-group {
             display: flex;
             gap: 30px;
@@ -298,6 +198,7 @@
         }
 
         .lang-select {
+            margin-top: 20px;
             background: white;
             border: 2px solid #2980B9;
             border-radius: 12px;
@@ -319,12 +220,12 @@
             box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
         }
         
-        .play-game-btn {
+        #play-btn {
             background: linear-gradient(135deg, #2ECC71 0%, #27AE60 100%);
             color: white;
         }
         
-        .rules-btn {
+        #rules-btn {
             background: linear-gradient(135deg, #3498DB 0%, #2980B9 100%);
             color: white;
         }
@@ -365,19 +266,6 @@
             font-family: 'Nunito', Arial, sans-serif;
         }
 
-        #reset-data-btn {
-            padding: 10px 14px;
-            font-size: 14px;
-            background: linear-gradient(135deg, #ef476f 0%, #c1121f 100%);
-            color: white;
-            border: none;
-            border-radius: 12px;
-            cursor: pointer;
-            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.15);
-            font-family: 'Nunito', Arial, sans-serif;
-            font-weight: 700;
-        }
-
         #leaderboard-btn {
             position: static;
             transform: none;
@@ -391,54 +279,6 @@
             transition: transform 0.2s, box-shadow 0.2s;
             box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
             font-family: 'Nunito', Arial, sans-serif;
-        }
-
-        #score-badges {
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            flex-wrap: wrap;
-        }
-
-        #player-current-run,
-        #player-best-score {
-            padding: 10px 16px;
-            font-size: 16px;
-            background: linear-gradient(135deg, #6dd5ed 0%, #2193b0 100%);
-            color: white;
-            border: none;
-            border-radius: 12px;
-            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
-            font-family: 'Nunito', Arial, sans-serif;
-            font-weight: 700;
-        }
-
-        #player-best-score {
-            background: linear-gradient(135deg, #4facfe 0%, #00c6ff 100%);
-        }
-
-        #app-toast {
-            position: fixed;
-            left: 50%;
-            bottom: 26px;
-            transform: translateX(-50%) translateY(24px);
-            background: rgba(17, 24, 39, 0.95);
-            color: #ffffff;
-            padding: 11px 16px;
-            border-radius: 12px;
-            font-size: 14px;
-            font-weight: 700;
-            font-family: 'Nunito', Arial, sans-serif;
-            box-shadow: 0 8px 22px rgba(0, 0, 0, 0.28);
-            z-index: 12000;
-            opacity: 0;
-            pointer-events: none;
-            transition: opacity 0.18s ease, transform 0.18s ease;
-        }
-
-        #app-toast.show {
-            opacity: 1;
-            transform: translateX(-50%) translateY(0);
         }
         
         .main-button:hover, #leaderboard-btn:hover {
@@ -507,117 +347,6 @@
             font-weight: bold;
             font-size: 20px;
             z-index: 260;
-        }
-
-        #game-ui-right {
-            justify-content: flex-end;
-        }
-
-        .hud-btn {
-            padding: 8px 14px;
-            border: none;
-            border-radius: 10px;
-            cursor: pointer;
-            color: #ffffff;
-            font-weight: 700;
-            font-size: 15px;
-            transition: transform 0.15s ease, box-shadow 0.15s ease;
-            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.25);
-        }
-
-        #pause-btn {
-            background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%);
-        }
-
-        #stop-btn {
-            background: linear-gradient(135deg, #ef4444 0%, #b91c1c 100%);
-        }
-
-        .hud-btn:hover {
-            transform: translateY(-1px);
-            box-shadow: 0 6px 14px rgba(0, 0, 0, 0.3);
-        }
-
-        .hud-btn:active {
-            transform: translateY(0);
-        }
-
-        #touch-controls {
-            position: absolute;
-            left: 20px;
-            right: 20px;
-            bottom: 20px;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            gap: 16px;
-            z-index: 270;
-            pointer-events: none;
-        }
-
-        #touch-controls.hidden {
-            display: none;
-        }
-
-        .touch-cluster {
-            display: flex;
-            gap: 12px;
-            pointer-events: auto;
-        }
-
-        #touch-dpad {
-            display: grid;
-            grid-template-columns: repeat(2, minmax(78px, 1fr));
-            gap: 12px;
-        }
-
-        #touch-action {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            gap: 8px;
-        }
-
-        #touch-helper {
-            font-size: 13px;
-            font-weight: 700;
-            color: #ffffff;
-            text-shadow: 0 2px 4px rgba(0, 0, 0, 0.55);
-            background: rgba(15, 23, 42, 0.5);
-            padding: 6px 10px;
-            border-radius: 999px;
-        }
-
-        .touch-btn {
-            min-width: 78px;
-            min-height: 78px;
-            border: none;
-            border-radius: 22px;
-            background: rgba(15, 23, 42, 0.78);
-            color: #ffffff;
-            font-size: 34px;
-            font-weight: 800;
-            box-shadow: 0 14px 30px rgba(15, 23, 42, 0.3);
-            backdrop-filter: blur(8px);
-            -webkit-backdrop-filter: blur(8px);
-            touch-action: none;
-            user-select: none;
-            -webkit-user-select: none;
-        }
-
-        .touch-btn:active,
-        .touch-btn.touch-active {
-            transform: scale(0.96);
-            background: rgba(37, 99, 235, 0.9);
-        }
-
-        #touch-jump-btn {
-            min-width: 92px;
-            min-height: 92px;
-            border-radius: 28px;
-            font-size: 21px;
-            padding: 10px 12px;
-            background: rgba(22, 163, 74, 0.85);
         }
 
         .game-hud {
@@ -703,12 +432,6 @@
             transform: scale(1.05);
             box-shadow: 0 6px 16px rgba(0, 0, 0, 0.3);
         }
-
-        .games-hub-btn {
-            position: absolute;
-            top: 0;
-            left: 0;
-        }
         
         .rules-list {
             background: rgba(255, 255, 255, 0.9);
@@ -786,216 +509,483 @@
             font-weight: 700;
         }
 
-        @media (max-width: 720px) {
-            body {
-                overflow: auto;
-            }
-
-            .landing-shell {
-                padding: 110px 18px 28px;
-            }
-
-            .hub-copy,
-            .game-card p,
-            .game-page-copy,
-            .section-heading p {
-                font-size: 17px;
-            }
-
-            .top-controls {
-                left: 14px;
-                right: 14px;
-                top: 14px;
-            }
-
-            .homepage-content {
-                padding: 88px 20px 28px;
-            }
-
-            .games-hub-btn {
-                position: static;
-                margin-bottom: 16px;
-            }
-
-            .button-group {
-                gap: 16px;
-            }
-
-            .main-button,
-            .hub-button {
-                width: 100%;
-            }
-
-            #game-page .page-ui {
-                padding: 8px 12px;
-                gap: 8px;
-            }
-
-            #game-ui-left,
-            #game-ui-right {
-                gap: 8px;
-                font-size: 15px;
-                flex-wrap: wrap;
-            }
-
-            .game-hud,
-            .hud-btn {
-                font-size: 13px;
-            }
-
-            #touch-controls {
-                left: 12px;
-                right: 12px;
-                bottom: 12px;
-                gap: 10px;
-                justify-content: space-between;
-            }
-
-            .touch-cluster {
-                gap: 10px;
-            }
-
-            #touch-dpad {
-                grid-template-columns: repeat(2, minmax(68px, 1fr));
-                gap: 10px;
-            }
-
-            .touch-btn {
-                min-width: 68px;
-                min-height: 68px;
-                font-size: 30px;
-                border-radius: 20px;
-            }
-
-            #touch-jump-btn {
-                min-width: 84px;
-                min-height: 84px;
-            }
+        /* ── Big 2 Button on Homepage ─────────────────────────────────────── */
+        #big2-btn {
+            background: linear-gradient(135deg, #c0392b 0%, #922b21 100%);
+            color: white;
         }
 
-        /* Login Overlay */
-        #login-overlay {
-            position: fixed;
-            inset: 0;
-            z-index: 9999;
-            background: rgba(15, 20, 40, 0.72);
-            backdrop-filter: blur(6px);
+        /* ── Big 2 Game Page ─────────────────────────────────────────────── */
+        #big2-page {
+            background: linear-gradient(160deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+            flex-direction: column;
+            overflow: hidden;
+        }
+        #big2-page.active { display: flex; }
+
+        #big2-page .page-ui {
+            position: relative;
+            top: auto;
+            padding: 10px 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-shrink: 0;
+            z-index: 10;
+        }
+
+        #big2-home-btn {
+            padding: 10px 20px;
+            font-size: 16px;
+            background: linear-gradient(135deg, #FF6B6B 0%, #EE5A6F 100%);
+            color: white;
+            border: none;
+            border-radius: 10px;
+            cursor: pointer;
+            transition: transform 0.2s;
+            font-family: 'Nunito', Arial, sans-serif;
+            font-weight: 700;
+        }
+        #big2-home-btn:hover { transform: scale(1.05); }
+
+        #b2-game-container {
+            flex: 1;
+            overflow-y: auto;
+            padding: 0 12px 12px;
+        }
+
+        /* Setup screen */
+        .b2-setup {
             display: flex;
             justify-content: center;
-            align-items: center;
+            align-items: flex-start;
+            padding: 20px 0;
+            min-height: 100%;
         }
-
-        #login-overlay.hidden {
-            display: none;
-        }
-
-        .login-box {
-            background: #fff;
-            border-radius: 24px;
-            padding: 40px 44px;
-            width: min(420px, 92vw);
-            display: flex;
-            flex-direction: column;
-            gap: 14px;
-            box-shadow: 0 24px 64px rgba(0, 0, 0, 0.45);
+        .b2-setup-card {
+            background: rgba(255,255,255,0.07);
+            border: 1px solid rgba(255,255,255,0.15);
+            border-radius: 20px;
+            padding: 32px 36px;
+            max-width: 480px;
+            width: 100%;
+            color: #eee;
+            font-family: 'Nunito', Arial, sans-serif;
             text-align: center;
         }
-
-        .login-box h2 {
-            font-size: 26px;
-            font-weight: 800;
-            color: #1f2933;
-            margin-bottom: 2px;
-        }
-
-        .login-box .login-subtitle {
-            font-size: 15px;
-            color: #627d98;
-        }
-
-        .login-box input {
-            width: 100%;
-            padding: 13px 16px;
-            font-size: 16px;
-            border: 2px solid #e1e8f0;
+        .b2-logo { font-size: 56px; margin-bottom: 8px; }
+        .b2-setup-title { font-size: 36px; font-weight: 800; margin-bottom: 6px; color: #f9ca24; }
+        .b2-setup-sub { font-size: 15px; color: #aaa; margin-bottom: 24px; }
+        .b2-setup-row { display: flex; flex-direction: column; align-items: center; gap: 10px; margin-bottom: 20px; }
+        .b2-setup-row label { font-size: 15px; color: #ccc; }
+        .b2-player-count { display: flex; gap: 12px; }
+        .b2-count-btn {
+            width: 52px; height: 52px;
+            font-size: 22px; font-weight: 800;
+            border: 2px solid rgba(255,255,255,0.25);
             border-radius: 12px;
+            background: rgba(255,255,255,0.08);
+            color: #eee;
+            cursor: pointer;
+            transition: all 0.15s;
             font-family: 'Nunito', Arial, sans-serif;
+        }
+        .b2-count-btn.selected, .b2-count-btn:hover {
+            background: #e74c3c;
+            border-color: #e74c3c;
+            color: #fff;
+        }
+        .b2-name-input {
+            width: 100%;
+            padding: 10px 14px;
+            font-size: 16px;
+            font-family: 'Nunito', Arial, sans-serif;
+            border-radius: 10px;
+            border: 1px solid rgba(255,255,255,0.2);
+            background: rgba(255,255,255,0.1);
+            color: #fff;
+            margin-bottom: 10px;
             outline: none;
-            transition: border-color 0.2s;
-            box-sizing: border-box;
+        }
+        .b2-name-input::placeholder { color: #888; }
+        .b2-name-input:focus { border-color: #f9ca24; }
+        .b2-start-btn {
+            width: 100%;
+            padding: 14px;
+            font-size: 20px;
+            font-weight: 800;
+            background: linear-gradient(135deg, #e74c3c, #c0392b);
+            color: #fff;
+            border: none;
+            border-radius: 14px;
+            cursor: pointer;
+            font-family: 'Nunito', Arial, sans-serif;
+            margin-top: 6px;
+            transition: transform 0.15s;
+        }
+        .b2-start-btn:hover { transform: scale(1.03); }
+        .b2-rules-hint {
+            font-size: 12px;
+            color: #888;
+            margin-top: 18px;
+            line-height: 1.7;
         }
 
-        .login-box input:focus {
-            border-color: #667eea;
+        /* Board */
+        .b2-board {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            min-height: 100%;
+            font-family: 'Nunito', Arial, sans-serif;
+            color: #e7eef8;
         }
 
-        #login-error {
-            color: #e74c3c;
+        .b2-stage {
+            position: relative;
+            height: 430px;
+            border-radius: 18px;
+            background: radial-gradient(circle at center, rgba(0,150,0,0.24) 0%, rgba(0,120,0,0.2) 36%, rgba(2,47,23,0.2) 100%);
+            border: 1px solid rgba(255,255,255,0.14);
+            box-shadow: inset 0 0 0 1px rgba(255,255,255,0.06), 0 12px 30px rgba(0,0,0,0.35);
+            overflow: hidden;
+        }
+
+        .b2-opponent-seat {
+            position: absolute;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            background: rgba(9, 18, 44, 0.72);
+            border: 1px solid rgba(255,255,255,0.14);
+            border-radius: 12px;
+            padding: 8px 10px;
+            backdrop-filter: blur(3px);
+        }
+
+        .b2-seat-top {
+            top: 10px;
+            left: 50%;
+            transform: translateX(-50%);
+            flex-direction: column;
+            min-width: 220px;
+        }
+        .b2-seat-left {
+            left: 10px;
+            top: 50%;
+            transform: translateY(-50%);
+            flex-direction: row;
+        }
+        .b2-seat-right {
+            right: 10px;
+            top: 50%;
+            transform: translateY(-50%);
+            flex-direction: row-reverse;
+        }
+
+        .b2-opponent-seat.is-turn {
+            border-color: #f9ca24;
+            box-shadow: 0 0 0 2px rgba(249,202,36,0.24);
+        }
+        .b2-opponent-seat.finished { opacity: 0.5; }
+        .b2-opponent-seat.inactive { opacity: 0.4; }
+
+        .b2-opponent-meta {
+            display: flex;
+            flex-direction: column;
+            gap: 3px;
+            min-width: 72px;
+        }
+        .b2-opponent-name { font-size: 13px; font-weight: 700; color: #f0f4ff; }
+        .b2-opponent-cards { font-size: 12px; color: #b8c7dd; }
+
+        .b2-opponent-stack {
+            position: relative;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 74px;
+            min-width: 84px;
+        }
+        .b2-opponent-stack.vertical {
+            min-height: 162px;
+            min-width: 64px;
+        }
+
+        .b2-card-back {
+            position: absolute;
+            border-radius: 8px;
+            border: 2px solid rgba(255,255,255,0.65);
+            background: linear-gradient(135deg, #c94141 0%, #d45757 100%);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.32);
+        }
+        .b2-opponent-stack.horizontal .b2-card-back {
+            width: 44px;
+            height: 66px;
+            left: calc(var(--i) * 11px);
+            top: 4px;
+        }
+        .b2-opponent-stack.vertical .b2-card-back {
+            width: 40px;
+            height: 60px;
+            top: calc(var(--i) * 9px);
+            left: 10px;
+        }
+
+        .b2-seat-flags {
+            display: flex;
+            gap: 6px;
+            flex-wrap: wrap;
+            margin-top: 2px;
+        }
+        .b2-pill {
+            font-size: 11px;
+            border-radius: 999px;
+            padding: 2px 8px;
+            font-weight: 700;
+            line-height: 1.25;
+        }
+        .b2-pill.pass { background: rgba(255,107,107,0.18); color: #ffb4b4; border: 1px solid rgba(255,107,107,0.3); }
+        .b2-pill.rank { background: rgba(249,202,36,0.2); color: #fde49a; border: 1px solid rgba(249,202,36,0.4); }
+
+        .b2-table-area {
+            position: absolute;
+            left: 50%;
+            top: 50%;
+            transform: translate(-50%, -50%);
+            width: min(430px, calc(100% - 150px));
+            min-height: 150px;
+            background: rgba(8, 15, 36, 0.78);
+            border: 1px solid rgba(255,255,255,0.14);
+            border-radius: 14px;
+            padding: 10px 14px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+        .b2-draw-pile {
+            position: absolute;
+            right: -96px;
+            top: 50%;
+            transform: translateY(-50%);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 6px;
+            color: #dbe7f7;
+            font-size: 12px;
+            font-weight: 700;
+            text-align: center;
+        }
+        .b2-draw-pile-stack {
+            position: relative;
+            width: 46px;
+            height: 64px;
+        }
+        .b2-draw-back {
+            position: absolute;
+            width: 42px;
+            height: 60px;
+            border-radius: 8px;
+            border: 2px solid rgba(255,255,255,0.7);
+            background: linear-gradient(135deg, #c94141 0%, #d45757 100%);
+            box-shadow: 0 4px 10px rgba(0,0,0,0.35);
+        }
+        .b2-draw-back:nth-child(1) { left: 0; top: 4px; }
+        .b2-draw-back:nth-child(2) { left: 2px; top: 2px; }
+        .b2-draw-back:nth-child(3) { left: 4px; top: 0; }
+        .b2-draw-pile-label {
+            background: rgba(9, 18, 44, 0.65);
+            border: 1px solid rgba(255,255,255,0.15);
+            border-radius: 8px;
+            padding: 3px 8px;
+            white-space: nowrap;
+        }
+        .b2-table-label {
+            font-size: 12px;
+            color: #b0bfd3;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            text-align: center;
+        }
+        .b2-table-hint {
+            color: #93a3ba;
             font-size: 14px;
-            min-height: 18px;
-            font-weight: 600;
+            font-style: italic;
+            text-align: center;
+        }
+        .b2-card-row {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 6px;
+            justify-content: center;
         }
 
-        .login-btn-row {
+        /* Cards */
+        .b2-card {
+            background: #fff;
+            border-radius: 8px;
+            width: 52px;
+            min-height: 74px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 2px;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.4);
+            border: 2px solid transparent;
+            transition: transform 0.12s, border-color 0.12s;
+            user-select: none;
+        }
+        .b2-card.interactive { cursor: pointer; }
+        .b2-card.interactive:hover { transform: translateY(-6px); }
+        .b2-card.selected {
+            transform: translateY(-12px);
+            border-color: #f9ca24;
+            box-shadow: 0 4px 14px rgba(249,202,36,0.6);
+        }
+        .b2-card-rank { font-size: 18px; font-weight: 800; line-height: 1; }
+        .b2-card-suit { font-size: 16px; line-height: 1; }
+
+        /* Log */
+        .b2-log {
+            background: rgba(0,0,0,0.35);
+            border-radius: 10px;
+            padding: 8px 14px;
+            font-size: 13px;
+            color: #ccc;
+            max-height: 90px;
+            overflow-y: auto;
+            line-height: 1.7;
+        }
+
+        /* Hand section */
+        .b2-hand-section {
+            background: rgba(9, 18, 44, 0.72);
+            border-radius: 14px;
+            padding: 12px 14px;
+            border: 1px solid rgba(255,255,255,0.12);
+        }
+        .b2-turn-label {
+            font-size: 16px;
+            font-weight: 700;
+            color: #fde68a;
+            margin-bottom: 10px;
+            text-align: center;
+        }
+        .b2-hand-row {
+            display: flex;
+            flex-wrap: nowrap;
+            gap: 0;
+            justify-content: center;
+            padding-bottom: 14px;
+            min-height: 86px;
+            overflow-x: auto;
+            padding-left: 10px;
+        }
+        .b2-hand-row .b2-card {
+            margin-left: -14px;
+            flex-shrink: 0;
+        }
+        .b2-hand-row .b2-card:first-child {
+            margin-left: 0;
+        }
+        .b2-hand-row .b2-card.selected {
+            margin-top: -12px;
+        }
+
+        @media (max-width: 920px) {
+            .b2-stage { height: 360px; }
+            .b2-table-area { width: calc(100% - 80px); }
+            .b2-draw-pile { right: -74px; }
+            .b2-seat-left, .b2-seat-right { top: 56%; }
+            .b2-opponent-meta { min-width: 60px; }
+            .b2-opponent-name { font-size: 12px; }
+            .b2-opponent-cards { font-size: 11px; }
+            .b2-opponent-seat { padding: 6px 8px; }
+        }
+
+        /* Action buttons */
+        .b2-action-row {
             display: flex;
             gap: 12px;
+            justify-content: center;
+            margin-top: 4px;
         }
-
-        .login-btn-row button {
-            flex: 1;
-            padding: 13px;
-            font-size: 15px;
+        .b2-btn {
+            padding: 12px 30px;
+            font-size: 16px;
             font-weight: 700;
             border: none;
             border-radius: 12px;
             cursor: pointer;
             font-family: 'Nunito', Arial, sans-serif;
-            transition: transform 0.15s, box-shadow 0.15s;
+            transition: transform 0.12s;
+        }
+        .b2-btn:hover { transform: scale(1.05); }
+        .b2-btn:disabled { opacity: 0.4; cursor: not-allowed; transform: none; }
+        .b2-btn-play {
+            background: linear-gradient(135deg, #f8fafc, #e2e8f0);
+            color: #0f172a;
+            border: 1px solid rgba(148,163,184,0.65);
+            box-shadow: inset 0 1px 0 rgba(255,255,255,0.9);
+        }
+        .b2-btn-pass {
+            background: rgba(255,255,255,0.12);
+            color: #eee;
+            border: 1px solid rgba(255,255,255,0.2);
+        }
+        .b2-btn-quit {
+            background: linear-gradient(135deg, #ef4444, #b91c1c);
+            color: #fff;
+            border: 1px solid rgba(248,113,113,0.55);
+        }
+        .b2-error {
+            display: none;
+            color: #ff6b6b;
+            font-size: 14px;
+            text-align: center;
+            margin-top: 8px;
+            font-weight: 600;
         }
 
-        .login-btn-row button:hover {
-            transform: scale(1.04);
-            box-shadow: 0 6px 18px rgba(0, 0, 0, 0.2);
+        /* Result screen */
+        .b2-result {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 16px;
+            padding: 24px 12px;
+            font-family: 'Nunito', Arial, sans-serif;
+            color: #eee;
         }
-
-        #login-submit-btn {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
+        .b2-result-title { font-size: 32px; font-weight: 800; color: #f9ca24; }
+        .b2-result-table {
+            border-collapse: collapse;
+            min-width: 280px;
+            background: rgba(255,255,255,0.07);
+            border-radius: 12px;
+            overflow: hidden;
         }
-
-        #login-create-btn {
-            background: linear-gradient(135deg, #2ECC71 0%, #27AE60 100%);
-            color: white;
+        .b2-result-table th, .b2-result-table td {
+            padding: 10px 20px;
+            text-align: center;
+            font-size: 15px;
+            border-bottom: 1px solid rgba(255,255,255,0.1);
         }
+        .b2-result-table th { background: rgba(249,202,36,0.15); color: #f9ca24; font-weight: 700; }
+        .b2-result-table tr.winner td { color: #f9ca24; font-weight: 800; }
+        .b2-result-log { max-width: 400px; width: 100%; }
     </style>
 </head>
 <body>
-
-    <!-- Login Overlay (shown when not logged in) -->
-    <div id="login-overlay">
-        <div class="login-box">
-            <h2>🎮 Coriander Arcade</h2>
-            <p class="login-subtitle">Enter your name and password to play</p>
-            <input type="text" id="login-username" placeholder="Your name" maxlength="20" autocomplete="username" />
-            <input type="password" id="login-password" placeholder="Password" autocomplete="current-password" />
-            <div id="login-error"></div>
-            <div class="login-btn-row">
-                <button id="login-submit-btn">▶ Sign In</button>
-                <button id="login-create-btn">✚ New Account</button>
-            </div>
-        </div>
-    </div>
-
-    <!-- Landing Page -->
-    <div id="landing-page" class="page active">
+    <!-- Hub Landing Page -->
+    <div id="homepage" class="page active">
         <div class="top-controls">
-            <button id="player-name-btn">👤 Player</button>
-            <div id="score-badges">
-                <div id="player-current-run">Current Run: 0</div>
-                <div id="player-best-score">Best Score: 0</div>
-            </div>
-            <button id="new-account-btn">🚪 Sign Out</button>
-            <button id="reset-data-btn">🗑 Reset Data</button>
+            <button id="player-name-btn">Name: Player</button>
+            <button id="new-account-btn">✚ New Account</button>
             <button id="leaderboard-btn">🏆 Leaderboard</button>
             <select id="language-selector" class="lang-select">
                 <option value="en">🇺🇸 English</option>
@@ -1005,96 +995,75 @@
         </div>
         <div class="landing-shell">
             <section class="landing-hero">
-                <p id="hub-kicker" class="hub-kicker">Game Portal</p>
-                <h1 id="hub-title" class="hub-title">Coriander Arcade</h1>
-                <p id="hub-copy" class="hub-copy">Choose a game from the library. Cat Adventure and Turbo Traffic are both live, with room for more to join the lineup.</p>
+                <p class="hub-kicker" id="hub-kicker">Game Portal</p>
+                <h1 class="hub-title" id="hub-title">Coriander Arcade</h1>
+                <p class="hub-copy" id="hub-copy">Four games, one hub. Pick your challenge.</p>
             </section>
             <section class="games-section">
-                <div class="section-heading">
-                    <h2 id="games-section-title">Available Games</h2>
-                    <p id="games-section-copy">Start with Cat Adventure or check back for new releases.</p>
-                </div>
                 <div class="games-grid">
+
+                    <!-- Cat Adventure -->
                     <article class="game-card featured">
                         <div class="game-card-art">🐱</div>
                         <div class="game-card-body">
-                            <p id="cat-card-status" class="game-status">Live Now</p>
+                            <p class="game-status" id="cat-card-status">Live Now</p>
                             <h3 id="cat-card-title">Cat Adventure</h3>
-                            <p id="cat-card-copy">Guide a blocky cat through tricky platform levels, dodge enemies, and chase a high score.</p>
+                            <p id="cat-card-copy">Jump through stacked platforms, dodge enemies, and reach the golden door to clear each level.</p>
                             <div class="game-card-meta">
                                 <span id="cat-card-genre">Platformer</span>
                                 <span id="cat-card-players">1 Player</span>
                             </div>
                         </div>
-                        <button class="main-button hub-button open-game-btn" data-game="cat-adventure">Open Game</button>
+                        <button class="main-button hub-button open-game-btn" data-game="cat-adventure" data-i18n="btn.openGame">Open Game</button>
                     </article>
+
+                    <!-- Turbo Traffic -->
                     <article class="game-card featured">
-                        <div class="game-card-art">🚗</div>
+                        <div class="game-card-art" style="background: linear-gradient(135deg,#74b9ff 0%,#0984e3 100%);">🚗</div>
                         <div class="game-card-body">
-                            <p id="car-card-status" class="game-status">Live Now</p>
+                            <p class="game-status" id="car-card-status">Live Now</p>
                             <h3 id="car-card-title">Turbo Traffic</h3>
-                            <p id="car-card-copy">Switch lanes, dodge incoming traffic, and keep your cool as the road gets faster.</p>
+                            <p id="car-card-copy">Slide across three lanes, dodge oncoming traffic, and stack up the longest distance you can survive.</p>
                             <div class="game-card-meta">
                                 <span id="car-card-genre">Endless Runner</span>
                                 <span id="car-card-players">1 Player</span>
                             </div>
                         </div>
-                        <button class="main-button hub-button open-game-btn" data-game="turbo-traffic">Open Game</button>
+                        <button class="main-button hub-button open-game-btn" data-game="turbo-traffic" data-i18n="btn.openGame">Open Game</button>
                     </article>
-                    <article class="game-card coming-soon" aria-disabled="true">
-                        <div class="game-card-art">✨</div>
+
+                    <!-- Star Paws Shooter -->
+                    <article class="game-card featured">
+                        <div class="game-card-art" style="background: linear-gradient(135deg,#a29bfe 0%,#6c5ce7 100%);">🚀</div>
                         <div class="game-card-body">
-                            <p id="coming-soon-status" class="game-status">Coming Soon</p>
-                            <h3 id="coming-soon-title">More Games Incoming</h3>
-                            <p id="coming-soon-copy">This slot is ready for the next project. When you add a new game, it can plug straight into this hub.</p>
+                            <p class="game-status" id="shooter-card-status">Live Now</p>
+                            <h3 id="shooter-card-title">Star Paws Shooter</h3>
+                            <p id="shooter-card-copy">Blast waves of alien enemies, level up, and see how long your crew can hold the line.</p>
+                            <div class="game-card-meta">
+                                <span id="shooter-card-genre">Space Shooter</span>
+                                <span id="shooter-card-players">1 Player</span>
+                            </div>
                         </div>
+                        <button class="main-button hub-button open-game-btn" data-game="star-paws-shooter" data-i18n="btn.openGame">Open Game</button>
                     </article>
+
+                    <!-- Big 2 -->
+                    <article class="game-card featured">
+                        <div class="game-card-art" style="background: linear-gradient(135deg,#ff7675 0%,#d63031 100%);">🃏</div>
+                        <div class="game-card-body">
+                            <p class="game-status" id="big2-card-status">Live Now</p>
+                            <h3 id="big2-card-title">Big 2</h3>
+                            <p id="big2-card-copy">The classic Chinese card game — play combos, beat the table, and be the first to empty your hand.</p>
+                            <div class="game-card-meta">
+                                <span id="big2-card-genre">Card Game</span>
+                                <span id="big2-card-players">2–4 Players</span>
+                            </div>
+                        </div>
+                        <button class="main-button hub-button open-game-btn" data-game="big-2" data-i18n="btn.openGame">Open Game</button>
+                    </article>
+
                 </div>
             </section>
-        </div>
-    </div>
-
-    <!-- Cat Adventure Page -->
-    <div id="homepage" class="page">
-        <div class="game-home-shell">
-            <button class="back-btn games-hub-btn">← All Games</button>
-            <div class="homepage-content">
-                <div class="cat-emoji">🐱</div>
-                <p id="game-page-kicker" class="hub-kicker">Now Playing</p>
-                <h1 id="cat-page-title" class="game-title">Cat Adventure</h1>
-                <p id="cat-page-copy" class="game-page-copy">Jump through stacked platforms, avoid enemies, and reach the golden door to clear each level.</p>
-                <div class="game-feature-row">
-                    <div id="cat-feature-difficulty" class="game-feature">Rising Difficulty</div>
-                    <div id="cat-feature-goal" class="game-feature">Door at Every Finish</div>
-                    <div id="cat-feature-score" class="game-feature">100 Pts per Level</div>
-                </div>
-                <div class="button-group">
-                    <button class="main-button rules-btn" data-game="cat-adventure" data-i18n="btn.rules">📖 Rules</button>
-                    <button class="main-button play-game-btn" data-game="cat-adventure" data-i18n="btn.play">▶ Play</button>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- Turbo Traffic Page -->
-    <div id="turbo-page" class="page">
-        <div class="game-home-shell">
-            <button class="back-btn games-hub-btn">← All Games</button>
-            <div class="homepage-content">
-                <div class="cat-emoji">🚗</div>
-                <p id="car-page-kicker" class="hub-kicker">Engines On</p>
-                <h1 id="car-page-title" class="game-title">Turbo Traffic</h1>
-                <p id="car-page-copy" class="game-page-copy">Slide across three lanes, dodge oncoming traffic, and stack up the longest distance you can survive.</p>
-                <div class="game-feature-row">
-                    <div id="car-feature-lanes" class="game-feature">3-Lane Dodging</div>
-                    <div id="car-feature-speed" class="game-feature">Speed Ramps Up</div>
-                    <div id="car-feature-score" class="game-feature">Distance-Based Score</div>
-                </div>
-                <div class="button-group">
-                    <button class="main-button rules-btn" data-game="turbo-traffic" data-i18n="btn.rules">📖 Rules</button>
-                    <button class="main-button play-game-btn" data-game="turbo-traffic" data-i18n="btn.play">▶ Play</button>
-                </div>
-            </div>
         </div>
     </div>
     
@@ -1106,7 +1075,7 @@
             <div class="rules-list">
                 <ul>
                     <li id="rule-objective"><strong>Objective:</strong> Guide your cat through increasingly difficult levels to reach the goal door.</li>
-                    <li id="rule-controls"><strong>Controls:</strong> Use WASD or Arrow Keys, or the on-screen touch buttons, to move and jump.</li>
+                    <li id="rule-controls"><strong>Controls:</strong> Use WASD or Arrow Keys to move left/right and jump.</li>
                     <li id="rule-platforms"><strong>Platforms:</strong> Jump across platforms to reach higher areas and avoid falling.</li>
                     <li id="rule-enemies"><strong>Enemies:</strong> Ground enemies walk back and forth, flying enemies hover and bob in the sky. Touching any enemy costs a life.</li>
                     <li id="rule-lives"><strong>Lives:</strong> You start with 3 lives. Lose all 3 and it's game over! Each new level resets your lives to 3.</li>
@@ -1177,44 +1146,29 @@
             <div id="game-ui-left">
                 <div id="score" class="game-hud">Score: <span id="score-value">0</span></div>
                 <div id="level" class="game-hud">Level: <span id="level-value">1</span></div>
-                <div id="speed" class="game-hud">Speed: <span id="speed-value">0</span></div>
-                <div id="current-run-hud" class="game-hud">Current Run: <span id="current-run-value">0</span></div>
-                <div id="best-score-hud" class="game-hud">Best Score: <span id="best-score-value">0</span></div>
-            </div>
-            <div id="game-ui-right">
-                <button id="pause-btn" class="hud-btn">⏸ Pause</button>
-                <button id="restart-btn" class="hud-btn">🔄 Restart</button>
-                <button id="stop-btn" class="hud-btn">⏹ Stop</button>
+                <div id="speed" class="game-hud" style="display:none;">Speed: <span id="speed-value">0</span></div>
+                <div id="lives" class="game-hud" style="display:none;">Lives: <span id="lives-value">5</span></div>
             </div>
         </div>
         <div id="game-container"></div>
-        <div id="touch-controls" class="hidden" aria-label="Touch game controls">
-            <div id="touch-dpad" class="touch-cluster">
-                <button id="touch-left-btn" class="touch-btn" type="button" aria-label="Move left">←</button>
-                <button id="touch-right-btn" class="touch-btn" type="button" aria-label="Move right">→</button>
-            </div>
-            <div id="touch-action" class="touch-cluster">
-                <button id="touch-jump-btn" class="touch-btn" type="button" aria-label="Jump">JUMP</button>
-                <div id="touch-helper">Hold direction to move</div>
-            </div>
+    </div>
+    
+    <!-- Big 2 Game Page -->
+    <div id="big2-page" class="page">
+        <div class="page-ui">
+            <button id="big2-home-btn" data-i18n="btn.home">🏠 Home</button>
+            <span id="big2-page-title" style="color:#f9ca24;font-weight:800;font-size:20px;font-family:'Nunito',sans-serif;">🃏 Big 2</span>
+            <span></span>
         </div>
+        <div id="b2-game-container"></div>
     </div>
 
-    <div id="app-toast" aria-live="polite" aria-atomic="true"></div>
-    
-    <script src="src/vendor/phaser-3.55.2.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/phaser@3.55.2/dist/phaser.js"></script>
     <script src="src/navigation.js"></script>
     <script src="src/gameScene.js"></script>
     <script src="src/trafficRunnerScene.js"></script>
+    <script src="src/starPawsShooterScene.js"></script>
     <script src="src/main.js"></script>
-    <script>
-        if ('serviceWorker' in navigator) {
-            window.addEventListener('load', () => {
-                navigator.serviceWorker.register('./sw.js').catch(() => {
-                    // Keep app functional even if offline support registration fails.
-                });
-            });
-        }
-    </script>
+    <script src="src/big2Scene.js"></script>
 </body>
 </html>
