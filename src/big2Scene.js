@@ -107,7 +107,12 @@ const BIG2_I18N = {
         gameCodeNotFound: 'Game code not found.',
         gameNoLongerAccepting: 'Game is no longer accepting players.',
         lobbyFull: 'Lobby is full.',
+        atLeastTwoToStart: 'At least 2 players are required to start.',
         onlyHostStart: 'Only the host can start the game.',
+        needMoreToStart: 'Need {count} more player{suffix} to start.',
+        readyToStart: 'All set. You can start the game now.',
+        waitingForHost: 'Waiting for host to start the game.',
+        needPlayersToStartBtn: 'Need More Players',
         unableLoadState: 'Unable to load game state.',
         unableSubmitPlay: 'Unable to submit play.',
         unablePass: 'Unable to pass.',
@@ -150,7 +155,8 @@ const BIG2_I18N = {
         roomInfo: '你是 {name} - 房间 {code}', gameOver: '🏆 游戏结束', hostEnded: '房主已为所有玩家结束本局。',
         place: '名次', player: '玩家', cardsLeft: '剩余手牌', backToMenu: '▶ 返回菜单', playAgain: '▶ 再来一局',
         noSelection: '请先选择要出的牌。', quitConfirm: '要为所有玩家结束游戏吗？这会结束当前整局比赛。',
-        gameCodeNotFound: '未找到房间码。', gameNoLongerAccepting: '该房间已不再接受加入。', lobbyFull: '房间已满。', onlyHostStart: '只有房主可以开始游戏。',
+        gameCodeNotFound: '未找到房间码。', gameNoLongerAccepting: '该房间已不再接受加入。', lobbyFull: '房间已满。', atLeastTwoToStart: '至少需要 2 名玩家才能开始。', onlyHostStart: '只有房主可以开始游戏。',
+        needMoreToStart: '还需要 {count} 名玩家才能开始。', readyToStart: '人数已满足，你现在可以开始游戏。', waitingForHost: '等待房主开始游戏。', needPlayersToStartBtn: '人数不足',
         unableLoadState: '无法加载游戏状态。', unableSubmitPlay: '无法提交出牌。', unablePass: '无法过牌。', unableQuit: '无法结束游戏。',
         playerInactive: '该玩家已离开。', invalidCardIndex: '无效的牌索引。', invalidCombo: '不是有效的大老二组合。', firstMust3D: '首手必须包含3♦。',
         notBeatTable: '该出牌无法压过当前牌面。', mustPlayOpen: '你必须出牌来开启本轮。', mustPlayAfterWin: '你是上一墩赢家，必须先手开启下一轮。',
@@ -179,7 +185,8 @@ const BIG2_I18N = {
         roomInfo: '당신은 {name} - 방 {code}', gameOver: '🏆 게임 종료', hostEnded: '호스트가 모든 플레이어의 게임을 종료했습니다.',
         place: '순위', player: '플레이어', cardsLeft: '남은 카드', backToMenu: '▶ 메뉴로', playAgain: '▶ 다시 플레이',
         noSelection: '먼저 낼 카드를 선택하세요.', quitConfirm: '모든 플레이어의 게임을 종료할까요? 현재 매치가 종료됩니다.',
-        gameCodeNotFound: '게임 코드를 찾을 수 없습니다.', gameNoLongerAccepting: '더 이상 플레이어를 받을 수 없습니다.', lobbyFull: '로비가 가득 찼습니다.', onlyHostStart: '호스트만 게임을 시작할 수 있습니다.',
+        gameCodeNotFound: '게임 코드를 찾을 수 없습니다.', gameNoLongerAccepting: '더 이상 플레이어를 받을 수 없습니다.', lobbyFull: '로비가 가득 찼습니다.', atLeastTwoToStart: '시작하려면 최소 2명의 플레이어가 필요합니다.', onlyHostStart: '호스트만 게임을 시작할 수 있습니다.',
+        needMoreToStart: '시작하려면 플레이어 {count}명 더 필요합니다.', readyToStart: '준비 완료. 지금 게임을 시작할 수 있습니다.', waitingForHost: '호스트가 게임을 시작할 때까지 대기 중입니다.', needPlayersToStartBtn: '플레이어 부족',
         unableLoadState: '게임 상태를 불러올 수 없습니다.', unableSubmitPlay: '카드 제출에 실패했습니다.', unablePass: '패스할 수 없습니다.', unableQuit: '게임을 종료할 수 없습니다.',
         playerInactive: '플레이어가 비활성 상태입니다.', invalidCardIndex: '잘못된 카드 인덱스입니다.', invalidCombo: '유효한 빅투 조합이 아닙니다.', firstMust3D: '첫 패에는 3♦가 포함되어야 합니다.',
         notBeatTable: '현재 테이블 패를 이기지 못했습니다.', mustPlayOpen: '라운드를 시작하려면 카드를 내야 합니다.', mustPlayAfterWin: '마지막 트릭 승자이므로 다음 라운드를 열어야 합니다.',
@@ -214,6 +221,7 @@ function b2TranslateError(msg) {
         'Game code not found.': 'gameCodeNotFound',
         'Game is no longer accepting players.': 'gameNoLongerAccepting',
         'Lobby is full.': 'lobbyFull',
+        'At least 2 players are required to start.': 'atLeastTwoToStart',
         'Only the host can start the game.': 'onlyHostStart',
         'Unable to load game state.': 'unableLoadState',
         'Unable to submit play.': 'unableSubmitPlay',
@@ -1345,6 +1353,13 @@ class Big2UI {
 
     _buildLobbyScreen(lobby, isHost) {
         const playerNames = lobby.players.map(player => player.name);
+        const missingPlayers = Math.max(0, 2 - lobby.players.length);
+        const canHostStart = isHost && missingPlayers === 0;
+        const lobbyStateHint = isHost
+            ? (canHostStart
+                ? b2t('readyToStart')
+                : b2t('needMoreToStart', { count: missingPlayers, suffix: missingPlayers === 1 ? '' : 's' }))
+            : b2t('waitingForHost');
         const backendStatus = this.currentLobbyBackend ? b2t('backendOnline') : b2t('backendLocal');
         const notice = this.currentLobbyNotice || (this.currentLobbyBackend
             ? b2t('lobbyNoticeOnline')
@@ -1370,10 +1385,11 @@ class Big2UI {
                         `).join('')}
                     </div>
                     <div style="margin-top:14px; padding:12px; border-radius:10px; background:rgba(255,255,255,0.08); color:#f3f6fb; font-size:13px; line-height:1.5;">
+                        <div style="font-weight:800; margin-bottom:8px; color:#f9ca24;">${lobbyStateHint}</div>
                         ${notice}
                     </div>
                     <div style="display:flex; gap:10px; margin-top:16px;">
-                        ${isHost ? `<button class="b2-start-btn" id="b2-start-game-btn" style="flex:1;">${b2t('hostStartGame')}</button>` : ''}
+                        ${isHost ? `<button class="b2-start-btn" id="b2-start-game-btn" style="flex:1; ${canHostStart ? '' : 'opacity:0.65; cursor:not-allowed;'}" ${canHostStart ? '' : 'disabled'}>${canHostStart ? b2t('hostStartGame') : b2t('needPlayersToStartBtn')}</button>` : ''}
                         <button class="b2-start-btn" id="b2-lobby-back-btn" style="flex:1; background: rgba(255,255,255,0.15); color:#eee;">${b2t('cancel')}</button>
                     </div>
                 </div>`;
@@ -1382,6 +1398,11 @@ class Big2UI {
             const startBtn = wrapper.querySelector('#b2-start-game-btn');
             if (startBtn && isHost) {
                 startBtn.addEventListener('click', async () => {
+                    if (!canHostStart) {
+                        this.currentLobbyNotice = b2t('atLeastTwoToStart');
+                        this._renderLobbyScreen(lobby);
+                        return;
+                    }
                     startBtn.disabled = true;
                     startBtn.textContent = b2t('starting');
                     const result = await startGameLobbySession(lobby.code, this.currentPlayerId);
