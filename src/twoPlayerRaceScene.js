@@ -17,6 +17,146 @@ class TwoPlayerRaceScene extends Phaser.Scene {
         this.lapsToWin = RACE_LAPS_TO_WIN_DEFAULT;
     }
 
+    getLang() {
+        const lang = localStorage.getItem('selectedLanguage') || 'en';
+        return ['en', 'zh-CN', 'ko-KR'].includes(lang) ? lang : 'en';
+    }
+
+    getText(path, vars = {}) {
+        const dict = {
+            en: {
+                raceTitle: 'Two People Race',
+                raceSubtitle: 'Create a room code and join from another device',
+                deviceRace: 'Device-to-Device Race',
+                deviceRaceHelp: 'Create a room code on one device, then join from another device.',
+                yourName: 'Your name',
+                createCode: 'Create Code',
+                playVsAi: 'Play vs AI',
+                enterCode: 'Enter code',
+                join: 'Join',
+                clear: 'Clear',
+                clearedInfo: 'Cleared old room info. You can create a new code or join another one.',
+                waitingSetup: 'Waiting for room setup...',
+                aiStart: 'AI kart race started. First to {laps} laps wins. Tap or press SPACE to boost.',
+                creatingRoom: 'Creating room...',
+                joiningRoom: 'Joining room...',
+                invalidCode: 'Enter a valid 4-character room code.',
+                createFailed: 'Unable to create room.',
+                joinFailed: 'Unable to join room.',
+                roomCode: 'Room code: {code}. Share this code and wait for player 2.',
+                joinedRoom: 'Joined room {code}. Race starting...',
+                raceLobby: 'Race Lobby',
+                keepOpen: 'Keep this screen open. The race will sync automatically.',
+                newCode: 'New Code',
+                back: 'Back',
+                roomLost: 'Room lost: {error}',
+                disconnected: 'Disconnected: {error}',
+                boostFailed: 'Boost failed.',
+                hostOnlyRematch: 'Only host can rematch.',
+                win: '{winner} wins! {result} Host can press R for rematch.',
+                winShort: '{winner} wins! {result} Press R for rematch.',
+                youWin: 'You win.',
+                youLose: 'You lose.',
+                roomStatus: 'Room {code} | Kart: {name}. Race to {laps} laps.',
+                finish: 'FINISH',
+                start: 'START',
+                player1: 'Player 1',
+                player2: 'Player 2',
+                hudP1: 'P1',
+                hudP2: 'P2',
+                aiName: 'AI Cat'
+            },
+            'zh-CN': {
+                raceTitle: '双人竞速',
+                raceSubtitle: '在一台设备创建房间码，另一台设备加入',
+                deviceRace: '设备联机竞速',
+                deviceRaceHelp: '在一台设备创建房间码，然后在另一台设备加入。',
+                yourName: '你的名字',
+                createCode: '创建房间码',
+                playVsAi: '对战 AI',
+                enterCode: '输入房间码',
+                join: '加入',
+                clear: '清除',
+                clearedInfo: '已清除旧房间信息。你可以创建新房间或加入其他房间。',
+                waitingSetup: '等待房间设置...',
+                aiStart: 'AI 竞速开始。先到 {laps} 圈获胜。点击或按空格加速。',
+                creatingRoom: '正在创建房间...',
+                joiningRoom: '正在加入房间...',
+                invalidCode: '请输入有效的 4 位房间码。',
+                createFailed: '无法创建房间。',
+                joinFailed: '无法加入房间。',
+                roomCode: '房间码：{code}。分享给玩家 2 并等待加入。',
+                joinedRoom: '已加入房间 {code}。比赛开始...',
+                raceLobby: '竞速大厅',
+                keepOpen: '请保持此页面开启，比赛会自动同步。',
+                newCode: '新房间码',
+                back: '返回',
+                roomLost: '房间丢失：{error}',
+                disconnected: '连接中断：{error}',
+                boostFailed: '加速失败。',
+                hostOnlyRematch: '仅房主可发起再来一局。',
+                win: '{winner} 获胜！{result} 房主可按 R 再来一局。',
+                winShort: '{winner} 获胜！{result} 按 R 再来一局。',
+                youWin: '你赢了。',
+                youLose: '你输了。',
+                roomStatus: '房间 {code} | 你的赛车：{name}。目标 {laps} 圈。',
+                finish: '终点',
+                start: '起点',
+                player1: '玩家 1',
+                player2: '玩家 2',
+                hudP1: '玩家1',
+                hudP2: '玩家2',
+                aiName: 'AI 猫'
+            },
+            'ko-KR': {
+                raceTitle: '2인 레이스',
+                raceSubtitle: '한 기기에서 방 코드를 만들고 다른 기기에서 참가하세요',
+                deviceRace: '기기간 레이스',
+                deviceRaceHelp: '한 기기에서 방 코드를 만들고, 다른 기기에서 참가하세요.',
+                yourName: '이름',
+                createCode: '코드 만들기',
+                playVsAi: 'AI와 플레이',
+                enterCode: '코드 입력',
+                join: '참가',
+                clear: '지우기',
+                clearedInfo: '이전 방 정보를 지웠습니다. 새 코드를 만들거나 다른 방에 참가하세요.',
+                waitingSetup: '방 설정 대기 중...',
+                aiStart: 'AI 레이스 시작. {laps}랩 선착순 승리. 탭 또는 SPACE로 부스트.',
+                creatingRoom: '방 생성 중...',
+                joiningRoom: '방 참가 중...',
+                invalidCode: '유효한 4자리 방 코드를 입력하세요.',
+                createFailed: '방을 만들 수 없습니다.',
+                joinFailed: '방에 참가할 수 없습니다.',
+                roomCode: '방 코드: {code}. 코드 공유 후 플레이어 2를 기다리세요.',
+                joinedRoom: '{code} 방에 참가했습니다. 레이스 시작...',
+                raceLobby: '레이스 로비',
+                keepOpen: '이 화면을 유지하세요. 레이스가 자동으로 동기화됩니다.',
+                newCode: '새 코드',
+                back: '뒤로',
+                roomLost: '방 연결 끊김: {error}',
+                disconnected: '연결 끊김: {error}',
+                boostFailed: '부스트 실패.',
+                hostOnlyRematch: '호스트만 재경기를 시작할 수 있습니다.',
+                win: '{winner} 승리! {result} 호스트는 R로 재경기 가능.',
+                winShort: '{winner} 승리! {result} R로 재경기.',
+                youWin: '당신이 이겼습니다.',
+                youLose: '당신이 졌습니다.',
+                roomStatus: '방 {code} | 내 카트: {name}. {laps}랩 레이스.',
+                finish: 'FINISH',
+                start: 'START',
+                player1: '플레이어 1',
+                player2: '플레이어 2',
+                hudP1: 'P1',
+                hudP2: 'P2',
+                aiName: 'AI 고양이'
+            }
+        };
+
+        const lang = this.getLang();
+        const value = (dict[lang] && dict[lang][path]) || dict.en[path] || path;
+        return Object.keys(vars).reduce((text, key) => text.replace(`{${key}}`, String(vars[key])), value);
+    }
+
     create() {
         this.physics.world.gravity.y = 0;
         this.cameras.main.setBackgroundColor('#d8f3ff');
@@ -120,24 +260,24 @@ class TwoPlayerRaceScene extends Phaser.Scene {
 
         root.innerHTML = `
             <div style="width:min(520px,92vw);background:rgba(255,255,255,0.94);border-radius:20px;padding:20px 22px;box-shadow:0 20px 45px rgba(0,0,0,0.22);font-family:Nunito,Arial,sans-serif;">
-                <h2 style="margin:0 0 8px;color:#113c5a;font-size:30px;">Device-to-Device Race</h2>
-                <p style="margin:0 0 14px;color:#1f4d66;">Create a room code on one device, then join from another device.</p>
+                <h2 style="margin:0 0 8px;color:#113c5a;font-size:30px;">${this.getText('deviceRace')}</h2>
+                <p style="margin:0 0 14px;color:#1f4d66;">${this.getText('deviceRaceHelp')}</p>
 
                 <div style="display:grid;gap:10px;">
-                    <input id="race-name-input" maxlength="20" placeholder="Your name" value="${this.getStoredName()}" style="padding:10px 12px;border-radius:10px;border:1px solid #bfd8ea;font-size:16px;" />
-                    <button id="race-create-btn" style="padding:12px 14px;border:none;border-radius:10px;background:#0f766e;color:#fff;font-size:18px;font-weight:700;cursor:pointer;">Create Code</button>
-                    <button id="race-ai-btn" style="padding:12px 14px;border:none;border-radius:10px;background:#7c3aed;color:#fff;font-size:18px;font-weight:700;cursor:pointer;">Play vs AI</button>
+                    <input id="race-name-input" maxlength="20" placeholder="${this.getText('yourName')}" value="${this.getStoredName()}" style="padding:10px 12px;border-radius:10px;border:1px solid #bfd8ea;font-size:16px;" />
+                    <button id="race-create-btn" style="padding:12px 14px;border:none;border-radius:10px;background:#0f766e;color:#fff;font-size:18px;font-weight:700;cursor:pointer;">${this.getText('createCode')}</button>
+                    <button id="race-ai-btn" style="padding:12px 14px;border:none;border-radius:10px;background:#7c3aed;color:#fff;font-size:18px;font-weight:700;cursor:pointer;">${this.getText('playVsAi')}</button>
                 </div>
 
                 <div style="height:1px;background:#d9e7f0;margin:16px 0;"></div>
 
                 <div style="display:grid;grid-template-columns:1fr auto;gap:8px;align-items:center;">
-                    <input id="race-code-input" maxlength="4" placeholder="Enter code" style="padding:10px 12px;border-radius:10px;border:1px solid #bfd8ea;font-size:18px;text-transform:uppercase;letter-spacing:0.14em;" />
-                    <button id="race-join-btn" style="padding:12px 16px;border:none;border-radius:10px;background:#2563eb;color:#fff;font-size:17px;font-weight:700;cursor:pointer;">Join</button>
+                    <input id="race-code-input" maxlength="4" placeholder="${this.getText('enterCode')}" style="padding:10px 12px;border-radius:10px;border:1px solid #bfd8ea;font-size:18px;text-transform:uppercase;letter-spacing:0.14em;" />
+                    <button id="race-join-btn" style="padding:12px 16px;border:none;border-radius:10px;background:#2563eb;color:#fff;font-size:17px;font-weight:700;cursor:pointer;">${this.getText('join')}</button>
                 </div>
 
                 <div style="display:flex;gap:10px;justify-content:flex-end;margin-top:12px;">
-                    <button id="race-reset-btn" style="padding:10px 14px;border:none;border-radius:10px;background:#e2e8f0;color:#1e293b;font-size:14px;font-weight:700;cursor:pointer;">Clear</button>
+                    <button id="race-reset-btn" style="padding:10px 14px;border:none;border-radius:10px;background:#e2e8f0;color:#1e293b;font-size:14px;font-weight:700;cursor:pointer;">${this.getText('clear')}</button>
                 </div>
 
                 <p id="race-menu-msg" style="margin:12px 0 0;color:#204860;font-size:14px;min-height:20px;"></p>
@@ -183,7 +323,7 @@ class TwoPlayerRaceScene extends Phaser.Scene {
             resetBtn.addEventListener('click', () => {
                 if (codeInput) codeInput.value = '';
                 this.resetRaceSession();
-                this.setMenuMessage('Cleared old room info. You can create a new code or join another one.');
+                this.setMenuMessage(this.getText('clearedInfo'));
             });
         }
     }
@@ -201,7 +341,7 @@ class TwoPlayerRaceScene extends Phaser.Scene {
         this.placeRacer(this.player2, 1);
         this.updateProgressHud();
         if (this.statusText) {
-            this.statusText.setText('Waiting for room setup...');
+            this.statusText.setText(this.getText('waitingSetup'));
         }
     }
 
@@ -219,11 +359,11 @@ class TwoPlayerRaceScene extends Phaser.Scene {
         this.placeRacer(this.player1, 0);
         this.placeRacer(this.player2, 1);
 
-        if (this.player1.label) this.player1.label.setText(name || 'You');
-        if (this.player2.label) this.player2.label.setText('AI Cat');
+        if (this.player1.label) this.player1.label.setText(name || this.getText('player1'));
+        if (this.player2.label) this.player2.label.setText(this.getText('aiName'));
 
         this.updateProgressHud();
-        this.statusText.setText(`AI kart race started. First to ${this.lapsToWin} laps wins. Tap or press SPACE to boost.`);
+        this.statusText.setText(this.getText('aiStart', { laps: this.lapsToWin }));
         this.unmountOverlay();
     }
 
@@ -243,7 +383,7 @@ class TwoPlayerRaceScene extends Phaser.Scene {
     async createRoom(name) {
         try {
             this.raceMode = 'network';
-            this.setMenuMessage('Creating room...');
+            this.setMenuMessage(this.getText('creatingRoom'));
             const data = await this.apiRequest('/api/race/lobbies', {
                 method: 'POST',
                 body: { hostName: name }
@@ -253,22 +393,22 @@ class TwoPlayerRaceScene extends Phaser.Scene {
             this.playerId = data.playerId;
             this.mySeat = 0;
 
-            this.showLobbyOverlay(`Room code: ${this.raceCode}. Share this code and wait for player 2.`);
+            this.showLobbyOverlay(this.getText('roomCode', { code: this.raceCode }));
             this.startLobbyPolling();
         } catch (error) {
-            this.setMenuMessage(error.message || 'Unable to create room.');
+            this.setMenuMessage(error.message || this.getText('createFailed'));
         }
     }
 
     async joinRoom(code, name) {
         if (!/^[A-Z0-9]{4}$/.test(code)) {
-            this.setMenuMessage('Enter a valid 4-character room code.');
+            this.setMenuMessage(this.getText('invalidCode'));
             return;
         }
 
         try {
             this.raceMode = 'network';
-            this.setMenuMessage('Joining room...');
+            this.setMenuMessage(this.getText('joiningRoom'));
             const data = await this.apiRequest(`/api/race/lobbies/${code}/join`, {
                 method: 'POST',
                 body: { playerName: name }
@@ -278,10 +418,10 @@ class TwoPlayerRaceScene extends Phaser.Scene {
             this.playerId = data.playerId;
             this.mySeat = 1;
 
-            this.showLobbyOverlay(`Joined room ${this.raceCode}. Race starting...`);
+            this.showLobbyOverlay(this.getText('joinedRoom', { code: this.raceCode }));
             this.enterRace();
         } catch (error) {
-            this.setMenuMessage(error.message || 'Unable to join room.');
+            this.setMenuMessage(error.message || this.getText('joinFailed'));
         }
     }
 
@@ -289,12 +429,12 @@ class TwoPlayerRaceScene extends Phaser.Scene {
         if (!this.overlayRoot) return;
         this.overlayRoot.innerHTML = `
             <div style="width:min(560px,92vw);background:rgba(255,255,255,0.95);border-radius:20px;padding:22px 24px;box-shadow:0 20px 45px rgba(0,0,0,0.22);font-family:Nunito,Arial,sans-serif;text-align:center;">
-                <h2 style="margin:0 0 10px;color:#113c5a;font-size:30px;">Race Lobby</h2>
+                <h2 style="margin:0 0 10px;color:#113c5a;font-size:30px;">${this.getText('raceLobby')}</h2>
                 <p style="margin:0 0 10px;color:#205a77;font-size:18px;">${message}</p>
-                <p style="margin:0;color:#37617a;font-size:14px;">Keep this screen open. The race will sync automatically.</p>
+                <p style="margin:0;color:#37617a;font-size:14px;">${this.getText('keepOpen')}</p>
                 <div style="display:flex;gap:10px;justify-content:center;margin-top:16px;">
-                    <button id="race-new-code-btn" style="padding:10px 14px;border:none;border-radius:10px;background:#1d4ed8;color:#fff;font-size:14px;font-weight:700;cursor:pointer;">New Code</button>
-                    <button id="race-back-btn" style="padding:10px 14px;border:none;border-radius:10px;background:#e2e8f0;color:#1e293b;font-size:14px;font-weight:700;cursor:pointer;">Back</button>
+                    <button id="race-new-code-btn" style="padding:10px 14px;border:none;border-radius:10px;background:#1d4ed8;color:#fff;font-size:14px;font-weight:700;cursor:pointer;">${this.getText('newCode')}</button>
+                    <button id="race-back-btn" style="padding:10px 14px;border:none;border-radius:10px;background:#e2e8f0;color:#1e293b;font-size:14px;font-weight:700;cursor:pointer;">${this.getText('back')}</button>
                 </div>
             </div>
         `;
@@ -329,7 +469,7 @@ class TwoPlayerRaceScene extends Phaser.Scene {
                     this.enterRace();
                 }
             } catch (error) {
-                this.showLobbyOverlay(`Room lost: ${error.message}`);
+                this.showLobbyOverlay(this.getText('roomLost', { error: error.message }));
                 this.cleanupNetworkTimers();
             }
         }, 900);
@@ -362,7 +502,7 @@ class TwoPlayerRaceScene extends Phaser.Scene {
             const data = await this.apiRequest(`/api/race/lobbies/${this.raceCode}/state?playerId=${encodeURIComponent(this.playerId)}`);
             this.applyServerState(data.state);
         } catch (error) {
-            this.statusText.setText(`Disconnected: ${error.message}`);
+            this.statusText.setText(this.getText('disconnected', { error: error.message }));
             this.raceActive = false;
             this.cleanupNetworkTimers();
         }
@@ -384,8 +524,8 @@ class TwoPlayerRaceScene extends Phaser.Scene {
         this.placeRacer(this.player1, 0);
         this.placeRacer(this.player2, 1);
 
-        const topName = state.players?.find(player => player.seat === 0)?.name || 'Player 1';
-        const bottomName = state.players?.find(player => player.seat === 1)?.name || 'Player 2';
+        const topName = state.players?.find(player => player.seat === 0)?.name || this.getText('player1');
+        const bottomName = state.players?.find(player => player.seat === 1)?.name || this.getText('player2');
 
         if (this.player1.label) this.player1.label.setText(topName);
         if (this.player2.label) this.player2.label.setText(bottomName);
@@ -395,11 +535,12 @@ class TwoPlayerRaceScene extends Phaser.Scene {
         if (typeof state.winner === 'number') {
             const winnerName = state.winner === 0 ? topName : bottomName;
             const youWin = this.mySeat === state.winner;
-            this.statusText.setText(`${winnerName} wins! ${youWin ? 'You win.' : 'You lose.'} Host can press R for rematch.`);
+            const result = youWin ? this.getText('youWin') : this.getText('youLose');
+            this.statusText.setText(this.getText('win', { winner: winnerName, result }));
             this.raceActive = false;
         } else if (state.status === 'in-progress') {
             const myLabel = this.mySeat === 0 ? topName : bottomName;
-            this.statusText.setText(`Room ${this.raceCode} | Kart: ${myLabel}. Race to ${this.lapsToWin} laps.`);
+            this.statusText.setText(this.getText('roomStatus', { code: this.raceCode, name: myLabel, laps: this.lapsToWin }));
             this.raceActive = true;
         }
     }
@@ -421,7 +562,7 @@ class TwoPlayerRaceScene extends Phaser.Scene {
             });
             this.applyServerState(data.state);
         } catch (error) {
-            this.statusText.setText(error.message || 'Boost failed.');
+            this.statusText.setText(error.message || this.getText('boostFailed'));
         }
     }
 
@@ -440,7 +581,7 @@ class TwoPlayerRaceScene extends Phaser.Scene {
             this.applyServerState(data.state);
             this.raceActive = true;
         } catch (error) {
-            this.statusText.setText(error.message || 'Only host can rematch.');
+            this.statusText.setText(error.message || this.getText('hostOnlyRematch'));
         }
     }
 
@@ -472,9 +613,10 @@ class TwoPlayerRaceScene extends Phaser.Scene {
 
         this.raceActive = false;
         const winnerSeat = this.player1.progress >= this.lapsToWin ? 0 : 1;
-        const winnerName = winnerSeat === 0 ? (this.player1.label ? this.player1.label.text : 'You') : 'AI Cat';
+        const winnerName = winnerSeat === 0 ? (this.player1.label ? this.player1.label.text : this.getText('player1')) : this.getText('aiName');
         const youWin = winnerSeat === 0;
-        this.statusText.setText(`${winnerName} wins! ${youWin ? 'You win.' : 'You lose.'} Press R for rematch.`);
+        const result = youWin ? this.getText('youWin') : this.getText('youLose');
+        this.statusText.setText(this.getText('winShort', { winner: winnerName, result }));
     }
 
     getLanePoint(progress, laneIndex) {
@@ -571,14 +713,14 @@ class TwoPlayerRaceScene extends Phaser.Scene {
             cones.fillTriangle(x, 388, x - 10, 412, x + 10, 412);
         });
 
-        this.add.text(600, 62, 'Two People Race', {
+        this.add.text(600, 62, this.getText('raceTitle'), {
             fontSize: '42px',
             fontFamily: 'Nunito, Arial, sans-serif',
             color: '#114b5f',
             fontStyle: 'bold'
         }).setOrigin(0.5);
 
-        this.add.text(600, 103, 'Create a room code and join from another device', {
+        this.add.text(600, 103, this.getText('raceSubtitle'), {
             fontSize: '20px',
             fontFamily: 'Nunito, Arial, sans-serif',
             color: '#1d3557'
@@ -619,28 +761,28 @@ class TwoPlayerRaceScene extends Phaser.Scene {
         gantry.fillRect(this.trackCenterX - 40, 144, 10, 54);
         gantry.fillRect(this.trackCenterX + 30, 144, 10, 54);
         gantry.fillRoundedRect(this.trackCenterX - 52, 118, 94, 28, 8);
-        this.add.text(this.trackCenterX - 5, 132, 'FINISH', {
+        this.add.text(this.trackCenterX - 5, 132, this.getText('finish'), {
             fontSize: '14px',
             fontFamily: 'Nunito, Arial, sans-serif',
             color: '#ffffff',
             fontStyle: 'bold'
         }).setOrigin(0.5);
 
-        this.add.text(this.trackCenterX - 128, 130, 'START', {
+        this.add.text(this.trackCenterX - 128, 130, this.getText('start'), {
             fontSize: '14px',
             fontFamily: 'Nunito, Arial, sans-serif',
             color: '#fff7ed',
             fontStyle: 'bold'
         }).setOrigin(0.5);
 
-        this.player1.label = this.add.text(88, 198, 'Player 1', {
+        this.player1.label = this.add.text(88, 198, this.getText('player1'), {
             fontSize: '24px',
             fontFamily: 'Nunito, Arial, sans-serif',
             color: '#ffffff',
             fontStyle: 'bold'
         });
 
-        this.player2.label = this.add.text(88, 384, 'Player 2', {
+        this.player2.label = this.add.text(88, 384, this.getText('player2'), {
             fontSize: '24px',
             fontFamily: 'Nunito, Arial, sans-serif',
             color: '#ffffff',
@@ -680,10 +822,10 @@ class TwoPlayerRaceScene extends Phaser.Scene {
         if (speedEl) speedEl.style.display = 'none';
         if (livesEl) livesEl.style.display = 'none';
 
-        if (scoreEl) scoreEl.innerHTML = 'P1: <span id="score-value">0%</span>';
-        if (levelEl) levelEl.innerHTML = 'P2: <span id="level-value">0%</span>';
+        if (scoreEl) scoreEl.innerHTML = '<span id="score-value">0%</span>';
+        if (levelEl) levelEl.innerHTML = '<span id="level-value">0%</span>';
 
-        this.statusText = this.add.text(600, 540, 'Waiting for room setup...', {
+        this.statusText = this.add.text(600, 540, this.getText('waitingSetup'), {
             fontSize: '24px',
             fontFamily: 'Nunito, Arial, sans-serif',
             color: '#0b3d91',
@@ -712,8 +854,8 @@ class TwoPlayerRaceScene extends Phaser.Scene {
         const scoreValue = document.getElementById('score-value');
         const levelValue = document.getElementById('level-value');
 
-        if (scoreValue) scoreValue.textContent = `L${p1Lap}/${this.lapsToWin} ${p1Progress}%`;
-        if (levelValue) levelValue.textContent = `L${p2Lap}/${this.lapsToWin} ${p2Progress}%`;
+        if (scoreValue) scoreValue.textContent = `${this.getText('hudP1')} L${p1Lap}/${this.lapsToWin} ${p1Progress}%`;
+        if (levelValue) levelValue.textContent = `${this.getText('hudP2')} L${p2Lap}/${this.lapsToWin} ${p2Progress}%`;
     }
 }
 

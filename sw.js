@@ -1,4 +1,4 @@
-const CACHE_NAME = 'coriander-arcade-v13';
+const CACHE_NAME = 'coriander-arcade-v14';
 
 const APP_SHELL = [
   './',
