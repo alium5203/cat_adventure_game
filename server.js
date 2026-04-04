@@ -24,6 +24,7 @@ const MIME_TYPES = {
 };
 
 const lobbies = new Map();
+const raceLobbies = new Map();
 
 const BIG2 = {
     RANKS: ['3', '4', '5', '6', '7', '8', '9', '10', 'J', 'Q', 'K', 'A', '2'],
@@ -173,6 +174,7 @@ class Big2ServerGame {
         this.passCount = 0;
         this.log = [];
         this.drawPile = [];
+        this.emotes = [];
 
         this.dealCards();
         this.findFirstTurn();
@@ -242,6 +244,30 @@ class Big2ServerGame {
         if (this.log.length > 30) {
             this.log = this.log.slice(-30);
         }
+    }
+
+    addEmote(playerSeat, emote) {
+        const player = this.players[playerSeat];
+        if (!player || !player.active) {
+            return { ok: false, error: 'Player is inactive.' };
+        }
+
+        const value = String(emote || '').trim().toLowerCase();
+        if (!['nice', 'oof', 'gg'].includes(value)) {
+            return { ok: false, error: 'Invalid emote.' };
+        }
+
+        this.emotes.push({
+            seat: player.seat,
+            name: player.name,
+            emote: value,
+            at: Date.now()
+        });
+        if (this.emotes.length > 24) {
+            this.emotes = this.emotes.slice(-24);
+        }
+
+        return { ok: true };
     }
 
     finishPlayer(player) {
@@ -400,7 +426,8 @@ class Big2ServerGame {
             })),
             finishOrder: [...this.finishOrder],
             log: this.log.slice(-8),
-            drawPileCount: this.drawPile.length
+            drawPileCount: this.drawPile.length,
+            emotes: this.emotes.slice(-8)
         };
     }
 }
@@ -446,6 +473,172 @@ function normalizeLobby(lobby) {
             isHost: Boolean(player.isHost)
         }))
     };
+}
+
+function normalizeRaceLobby(lobby) {
+    return {
+        code: lobby.code,
+        createdAt: lobby.createdAt,
+        startedAt: lobby.startedAt || null,
+        finishedAt: lobby.finishedAt || null,
+        status: lobby.status,
+        winner: typeof lobby.winner === 'number' ? lobby.winner : null,
+        players: lobby.players.map(player => ({
+            id: player.id,
+            name: player.name,
+            isHost: Boolean(player.isHost),
+            seat: player.seat
+        })),
+        progress: [lobby.progress[0] || 0, lobby.progress[1] || 0]
+    };
+}
+
+function cleanupExpiredRaceLobbies() {
+    const now = Date.now();
+    for (const [code, lobby] of raceLobbies.entries()) {
+        if (!lobby || now - lobby.createdAt > LOBBY_TTL_MS) {
+            raceLobbies.delete(code);
+        }
+    }
+}
+
+function createRaceLobby(hostName) {
+    cleanupExpiredRaceLobbies();
+
+    let code;
+    do {
+        code = generateGameCode();
+    } while (raceLobbies.has(code));
+
+    const hostPlayer = {
+        id: generatePlayerId(),
+        name: hostName,
+        isHost: true,
+        seat: 0
+    };
+
+    const lobby = {
+        code,
+        createdAt: Date.now(),
+        startedAt: null,
+        finishedAt: null,
+        status: 'waiting',
+        winner: null,
+        players: [hostPlayer],
+        progress: [0, 0]
+    };
+
+    raceLobbies.set(code, lobby);
+    return { lobby, playerId: hostPlayer.id };
+}
+
+function joinRaceLobby(code, playerName) {
+    cleanupExpiredRaceLobbies();
+    const lobby = raceLobbies.get(code);
+    if (!lobby) {
+        return { ok: false, statusCode: 404, error: 'Game code not found.' };
+    }
+    if (lobby.players.length >= 2) {
+        return { ok: false, statusCode: 409, error: 'Lobby is full.' };
+    }
+    if (lobby.status === 'finished') {
+        return { ok: false, statusCode: 409, error: 'Game is no longer active.' };
+    }
+
+    const player = {
+        id: generatePlayerId(),
+        name: playerName,
+        isHost: false,
+        seat: 1
+    };
+    lobby.players.push(player);
+
+    if (lobby.players.length === 2 && lobby.status === 'waiting') {
+        lobby.status = 'in-progress';
+        lobby.startedAt = Date.now();
+    }
+
+    return { ok: true, lobby, playerId: player.id };
+}
+
+function raceStateForPlayer(code, playerId) {
+    cleanupExpiredRaceLobbies();
+    const lobby = raceLobbies.get(code);
+    if (!lobby) {
+        return { ok: false, statusCode: 404, error: 'Game code not found.' };
+    }
+
+    const mySeat = lobby.players.findIndex(player => player.id === playerId);
+    if (mySeat < 0) {
+        return { ok: false, statusCode: 403, error: 'Player is not in this game.' };
+    }
+
+    return {
+        ok: true,
+        lobby,
+        state: {
+            code: lobby.code,
+            status: lobby.status,
+            mySeat,
+            winner: typeof lobby.winner === 'number' ? lobby.winner : null,
+            progress: [lobby.progress[0] || 0, lobby.progress[1] || 0],
+            players: lobby.players.map(player => ({
+                seat: player.seat,
+                name: player.name,
+                isHost: player.isHost
+            }))
+        }
+    };
+}
+
+function raceBoost(code, playerId) {
+    const state = raceStateForPlayer(code, playerId);
+    if (!state.ok) return state;
+
+    const { lobby } = state;
+    if (lobby.status !== 'in-progress') {
+        return { ok: false, statusCode: 409, error: 'Game is not in progress.' };
+    }
+
+    const seat = lobby.players.findIndex(player => player.id === playerId);
+    if (seat < 0) {
+        return { ok: false, statusCode: 403, error: 'Player is not in this game.' };
+    }
+
+    if (lobby.winner !== null) {
+        return { ok: true, lobby, state: state.state };
+    }
+
+    lobby.progress[seat] = Math.min(1, (lobby.progress[seat] || 0) + 0.022);
+    if (lobby.progress[seat] >= 1) {
+        lobby.winner = seat;
+        lobby.status = 'finished';
+        lobby.finishedAt = Date.now();
+    }
+
+    return raceStateForPlayer(code, playerId);
+}
+
+function raceRematch(code, playerId) {
+    const state = raceStateForPlayer(code, playerId);
+    if (!state.ok) return state;
+
+    const { lobby } = state;
+    const player = lobby.players.find(entry => entry.id === playerId);
+    if (!player || !player.isHost) {
+        return { ok: false, statusCode: 403, error: 'Only the host can restart.' };
+    }
+    if (lobby.players.length < 2) {
+        return { ok: false, statusCode: 409, error: 'Need 2 players to restart.' };
+    }
+
+    lobby.progress = [0, 0];
+    lobby.winner = null;
+    lobby.finishedAt = null;
+    lobby.status = 'in-progress';
+    lobby.startedAt = Date.now();
+
+    return raceStateForPlayer(code, playerId);
 }
 
 function cleanupExpiredLobbies() {
@@ -597,6 +790,23 @@ function passTurn(code, playerId) {
     };
 }
 
+function sendEmote(code, playerId, emote) {
+    const state = gameStateForPlayer(code, playerId, { requireInProgress: true });
+    if (!state.ok) return state;
+
+    const seat = resolvePlayerSeat(state.lobby, playerId);
+    const result = state.lobby.game.addEmote(seat, emote);
+    if (!result.ok) {
+        return { ok: false, statusCode: 409, error: result.error };
+    }
+
+    return {
+        ok: true,
+        lobby: state.lobby,
+        snapshot: state.lobby.game.snapshotForSeat(seat)
+    };
+}
+
 function quitLobby(code, playerId) {
     cleanupExpiredLobbies();
     const lobby = lobbies.get(code);
@@ -654,6 +864,104 @@ async function parseJsonBody(req) {
 
 async function handleApi(req, res, parsedUrl) {
     const pathname = parsedUrl.pathname;
+    if (pathname === '/api/race/health' && req.method === 'GET') {
+        sendJson(res, 200, { ok: true, service: 'race', status: 'online' });
+        return true;
+    }
+
+    if (pathname === '/api/race/lobbies' && req.method === 'POST') {
+        const body = await parseJsonBody(req);
+        const hostName = String(body.hostName || '').trim() || 'Player 1';
+        const result = createRaceLobby(hostName);
+        sendJson(res, 201, {
+            ok: true,
+            lobby: normalizeRaceLobby(result.lobby),
+            playerId: result.playerId
+        });
+        return true;
+    }
+
+    const raceLobbyMatch = pathname.match(/^\/api\/race\/lobbies\/([A-Z0-9]{4})(?:\/(join|state|boost|rematch))?$/);
+    if (raceLobbyMatch) {
+        const code = raceLobbyMatch[1];
+        const action = raceLobbyMatch[2] || 'read';
+
+        if (action === 'read' && req.method === 'GET') {
+            cleanupExpiredRaceLobbies();
+            const lobby = raceLobbies.get(code);
+            if (!lobby) {
+                sendError(res, 404, 'Game code not found.');
+                return true;
+            }
+            sendJson(res, 200, { ok: true, lobby: normalizeRaceLobby(lobby) });
+            return true;
+        }
+
+        if (action === 'join' && req.method === 'POST') {
+            const body = await parseJsonBody(req);
+            const playerName = String(body.playerName || '').trim() || 'Player 2';
+            const result = joinRaceLobby(code, playerName);
+            if (!result.ok) {
+                sendError(res, result.statusCode, result.error);
+                return true;
+            }
+            sendJson(res, 200, {
+                ok: true,
+                lobby: normalizeRaceLobby(result.lobby),
+                playerId: result.playerId
+            });
+            return true;
+        }
+
+        if (action === 'state' && req.method === 'GET') {
+            const playerId = String(parsedUrl.searchParams.get('playerId') || '');
+            const result = raceStateForPlayer(code, playerId);
+            if (!result.ok) {
+                sendError(res, result.statusCode, result.error);
+                return true;
+            }
+            sendJson(res, 200, {
+                ok: true,
+                lobby: normalizeRaceLobby(result.lobby),
+                state: result.state
+            });
+            return true;
+        }
+
+        if (action === 'boost' && req.method === 'POST') {
+            const body = await parseJsonBody(req);
+            const result = raceBoost(code, String(body.playerId || ''));
+            if (!result.ok) {
+                sendError(res, result.statusCode, result.error);
+                return true;
+            }
+            sendJson(res, 200, {
+                ok: true,
+                lobby: normalizeRaceLobby(result.lobby),
+                state: result.state
+            });
+            return true;
+        }
+
+        if (action === 'rematch' && req.method === 'POST') {
+            const body = await parseJsonBody(req);
+            const result = raceRematch(code, String(body.playerId || ''));
+            if (!result.ok) {
+                sendError(res, result.statusCode, result.error);
+                return true;
+            }
+            sendJson(res, 200, {
+                ok: true,
+                lobby: normalizeRaceLobby(result.lobby),
+                state: result.state
+            });
+            return true;
+        }
+
+        sendError(res, 405, 'Method not allowed.');
+        return true;
+    }
+
     if (pathname === '/api/big2/health' && req.method === 'GET') {
         sendJson(res, 200, { ok: true, service: 'big2', status: 'online' });
         return true;
@@ -672,7 +980,7 @@ async function handleApi(req, res, parsedUrl) {
         return true;
     }
 
-    const lobbyMatch = pathname.match(/^\/api\/big2\/lobbies\/([A-Z0-9]{4})(?:\/(join|start|state|play|pass|quit))?$/);
+    const lobbyMatch = pathname.match(/^\/api\/big2\/lobbies\/([A-Z0-9]{4})(?:\/(join|start|state|play|pass|quit|emote))?$/);
     if (!lobbyMatch) {
         return false;
     }
@@ -778,6 +1086,21 @@ async function handleApi(req, res, parsedUrl) {
         return true;
     }
 
+    if (action === 'emote' && req.method === 'POST') {
+        const body = await parseJsonBody(req);
+        const result = sendEmote(code, String(body.playerId || ''), String(body.emote || ''));
+        if (!result.ok) {
+            sendError(res, result.statusCode, result.error);
+            return true;
+        }
+        sendJson(res, 200, {
+            ok: true,
+            lobby: normalizeLobby(result.lobby),
+            state: result.snapshot
+        });
+        return true;
+    }
+
     sendError(res, 405, 'Method not allowed.');
     return true;
 }
@@ -832,7 +1155,7 @@ const server = http.createServer(async (req, res) => {
         const parsedUrl = new URL(req.url, `http://${req.headers.host || 'localhost'}`);
         const pathname = parsedUrl.pathname;
 
-        if (pathname.startsWith('/api/big2')) {
+        if (pathname.startsWith('/api/')) {
             const handled = await handleApi(req, res, parsedUrl);
             if (!handled) {
                 sendError(res, 404, 'API route not found.');
@@ -849,4 +1172,5 @@ const server = http.createServer(async (req, res) => {
 server.listen(PORT, '0.0.0.0', () => {
     console.log(`Cat Game server listening on http://0.0.0.0:${PORT}`);
     console.log('Big 2 lobby API available at /api/big2');
+    console.log('Race lobby API available at /api/race');
 });

@@ -134,7 +134,13 @@ const BIG2_I18N = {
         logRoundOverInactive: 'Round over (inactive skips). {name} opens.',
         logFinished: '🎉 {name} finishes #{rank}!',
         logGameOver: 'Game over!',
-        logPlayerLeft: '⚠️ {name} left the game. Their seat is locked.'
+        logPlayerLeft: '⚠️ {name} left the game. Their seat is locked.',
+        firstPlacePinned: '1st Place: {name}',
+        firstPlaceBurst: '🏆 {name} takes 1st place!',
+        emoteNice: 'Nice',
+        emoteOof: 'Oof',
+        emoteGG: 'GG',
+        invalidEmote: 'Invalid emote.'
     },
     'zh-CN': {
         setupTitle: '大老二', setupSub: '可本地或在线与朋友一起玩！', createGame: '➕ 创建游戏', joinGame: '🔗 加入游戏', rules: '📘 规则',
@@ -164,7 +170,9 @@ const BIG2_I18N = {
         notBeatTable: '该出牌无法压过当前牌面。', mustPlayOpen: '你必须出牌来开启本轮。', mustPlayAfterWin: '你是上一墩赢家，必须先手开启下一轮。',
         logPlayed: '{name} 出牌：{cards}', logPassedDrew: '{name} 过牌并摸了1张牌。', logPassed: '{name} 过牌。',
         logRoundOver: '本轮结束。{name} 开启下一轮。', logSkipTurn: '{name} 的回合被跳过（玩家已离开）。', logRoundOverInactive: '本轮结束（含离线跳过）。{name} 开启新轮。',
-        logFinished: '🎉 {name} 获得第{rank}名！', logGameOver: '游戏结束！', logPlayerLeft: '⚠️ {name} 离开了游戏，其座位已锁定。'
+        logFinished: '🎉 {name} 获得第{rank}名！', logGameOver: '游戏结束！', logPlayerLeft: '⚠️ {name} 离开了游戏，其座位已锁定。',
+        firstPlacePinned: '第一名：{name}', firstPlaceBurst: '🏆 {name} 率先拿下第一名！',
+        emoteNice: '好牌', emoteOof: '哎呀', emoteGG: 'GG', invalidEmote: '无效表情。'
     },
     'ko-KR': {
         setupTitle: '빅투', setupSub: '로컬 또는 온라인으로 친구들과 플레이하세요!', createGame: '➕ 게임 만들기', joinGame: '🔗 게임 참가', rules: '📘 규칙',
@@ -194,7 +202,9 @@ const BIG2_I18N = {
         notBeatTable: '현재 테이블 패를 이기지 못했습니다.', mustPlayOpen: '라운드를 시작하려면 카드를 내야 합니다.', mustPlayAfterWin: '마지막 트릭 승자이므로 다음 라운드를 열어야 합니다.',
         logPlayed: '{name} 플레이: {cards}', logPassedDrew: '{name} 패스 후 카드 1장을 뽑았습니다.', logPassed: '{name} 패스.',
         logRoundOver: '라운드 종료. {name}가 다음 라운드를 시작합니다.', logSkipTurn: '{name}의 턴이 건너뛰어졌습니다 (플레이어 이탈).', logRoundOverInactive: '라운드 종료(비활성 스킵). {name}가 시작합니다.',
-        logFinished: '🎉 {name} #{rank}등으로 종료!', logGameOver: '게임 오버!', logPlayerLeft: '⚠️ {name}님이 게임을 떠났고 좌석이 잠겼습니다.'
+        logFinished: '🎉 {name} #{rank}등으로 종료!', logGameOver: '게임 오버!', logPlayerLeft: '⚠️ {name}님이 게임을 떠났고 좌석이 잠겼습니다.',
+        firstPlacePinned: '1등: {name}', firstPlaceBurst: '🏆 {name}님이 1등을 확정했어요!',
+        emoteNice: '나이스', emoteOof: '아이고', emoteGG: 'GG', invalidEmote: '잘못된 이모트입니다.'
     }
 };
 
@@ -236,10 +246,55 @@ function b2TranslateError(msg) {
         'This play does not beat the current table.': 'notBeatTable',
         'You must play to open the round.': 'mustPlayOpen',
         'You won the last trick - you must play to open the next round.': 'mustPlayAfterWin',
-        'You won the last trick — you must play to open the next round.': 'mustPlayAfterWin'
+        'You won the last trick — you must play to open the next round.': 'mustPlayAfterWin',
+        'Invalid emote.': 'invalidEmote'
     };
     const key = map[msg];
     return key ? b2t(key) : msg;
+}
+
+function b2TranslateLogLine(line) {
+    const text = String(line || '').trim();
+    if (!text) return '';
+
+    let match = text.match(/^(.+?) played: (.+)$/);
+    if (match) return b2t('logPlayed', { name: match[1], cards: match[2] });
+
+    match = text.match(/^(.+?) passed and drew 1 card\.$/);
+    if (match) return b2t('logPassedDrew', { name: match[1] });
+
+    match = text.match(/^(.+?) passed\.$/);
+    if (match) return b2t('logPassed', { name: match[1] });
+
+    match = text.match(/^Round over\. (.+?) opens next round\.$/);
+    if (match) return b2t('logRoundOver', { name: match[1] });
+
+    match = text.match(/^(.+?)'s turn skipped \(player left\)\.$/);
+    if (match) return b2t('logSkipTurn', { name: match[1] });
+
+    match = text.match(/^Round over \(inactive skips\)\. (.+?) opens\.$/);
+    if (match) return b2t('logRoundOverInactive', { name: match[1] });
+
+    match = text.match(/^🎉 (.+?) finishes #(\d+)!$/);
+    if (match) return b2t('logFinished', { name: match[1], rank: match[2] });
+
+    if (text === 'Game over!') return b2t('logGameOver');
+
+    match = text.match(/^⚠️ (.+?) left the game\. Their seat is locked\.$/);
+    if (match) return b2t('logPlayerLeft', { name: match[1] });
+
+    match = text.match(/^⚠️ Host .+? ended the game\.$/);
+    if (match) return b2t('hostEnded');
+
+    return line;
+}
+
+function b2EmoteLabel(value) {
+    const key = String(value || '').toLowerCase();
+    if (key === 'nice') return b2t('emoteNice');
+    if (key === 'oof') return b2t('emoteOof');
+    if (key === 'gg') return b2t('emoteGG');
+    return key;
 }
 
 // ─── Game Code & Registry ────────────────────────────────────────────────────────
@@ -559,6 +614,22 @@ async function quitOnlineGameSession(code, playerId) {
         return { ok: true, state: data.state, lobby: data.lobby };
     } catch (error) {
         return { ok: false, error: b2TranslateError(error.message || b2t('unableQuit')) };
+    }
+}
+
+async function sendEmoteSession(code, playerId, emote) {
+    try {
+        const data = await big2ApiRequest(`/lobbies/${code}/emote`, {
+            method: 'POST',
+            body: { playerId, emote }
+        });
+        return { ok: true, state: data.state, lobby: data.lobby };
+    } catch (error) {
+        const message = String(error?.message || '');
+        if (/API route not found|Request failed \(404\)/i.test(message)) {
+            return { ok: true, localOnly: true };
+        }
+        return { ok: false, error: b2TranslateError(message || b2t('invalidEmote')) };
     }
 }
 // ─── Card Model ───────────────────────────────────────────────────────────────
@@ -1024,6 +1095,11 @@ class Big2UI {
         this.networkPollTimer = null;
         this.networkError = '';
         this.lastNetworkHandSignature = '';
+        this.lastEmoteAt = 0;
+        this.lastSeenEmoteStamp = 0;
+        this.transientEmote = null;
+        this.firstPlaceWinnerKey = '';
+        this.transientWinner = null;
     }
 
     _clearLobbyPolling() {
@@ -1052,6 +1128,128 @@ class Big2UI {
         this.networkState = null;
         this.networkError = '';
         this.lastNetworkHandSignature = '';
+        this.lastEmoteAt = 0;
+        this.lastSeenEmoteStamp = 0;
+        this.transientEmote = null;
+        this.firstPlaceWinnerKey = '';
+        this.transientWinner = null;
+    }
+
+    _resolveFirstPlaceWinner(players, finishOrder) {
+        if (!Array.isArray(players) || !Array.isArray(finishOrder) || finishOrder.length === 0) {
+            return null;
+        }
+
+        const winnerToken = finishOrder[0];
+        let winner = players.find(entry => entry?.id === winnerToken || entry?.seat === winnerToken);
+        if (!winner && Number.isInteger(winnerToken) && players[winnerToken]) {
+            winner = players[winnerToken];
+        }
+        if (!winner) return null;
+
+        const winnerId = winner.seat ?? winner.id ?? winnerToken;
+        return {
+            key: String(winnerId),
+            name: winner.name || b2t('playerDefault', { n: 1 })
+        };
+    }
+
+    _primeWinnerAnnouncement(players, finishOrder) {
+        const winner = this._resolveFirstPlaceWinner(players, finishOrder);
+        this.firstPlaceWinnerKey = winner ? winner.key : '';
+        this.transientWinner = null;
+    }
+
+    _updateWinnerAnnouncement(players, finishOrder) {
+        const winner = this._resolveFirstPlaceWinner(players, finishOrder);
+        if (!winner) return null;
+
+        if (winner.key !== this.firstPlaceWinnerKey) {
+            this.firstPlaceWinnerKey = winner.key;
+            this.transientWinner = {
+                text: b2t('firstPlaceBurst', { name: winner.name }),
+                until: Date.now() + 1850
+            };
+        }
+        return winner;
+    }
+
+    _appendWinnerUI(board, winner) {
+        if (!winner) return;
+
+        const pin = document.createElement('div');
+        pin.className = 'b2-winner-pin';
+        pin.textContent = b2t('firstPlacePinned', { name: winner.name });
+        board.appendChild(pin);
+
+        if (this.transientWinner && Date.now() < this.transientWinner.until) {
+            const burst = document.createElement('div');
+            burst.className = 'b2-winner-burst';
+            burst.textContent = this.transientWinner.text;
+            board.appendChild(burst);
+        }
+    }
+
+    _buildResultCelebrationLayer() {
+        const layer = document.createElement('div');
+        layer.className = 'b2-result-celebration';
+
+        const confetti = document.createElement('div');
+        confetti.className = 'b2-confetti-field';
+        const confettiPalette = ['#facc15', '#34d399', '#60a5fa', '#f472b6', '#f97316'];
+        for (let i = 0; i < 18; i++) {
+            const piece = document.createElement('span');
+            piece.className = 'b2-confetti-piece';
+            piece.style.left = `${5 + i * 5.2}%`;
+            piece.style.background = confettiPalette[i % confettiPalette.length];
+            piece.style.animationDelay = `${(i % 6) * 0.24}s`;
+            piece.style.animationDuration = `${4 + (i % 4) * 0.45}s`;
+            confetti.appendChild(piece);
+        }
+
+        const balloons = document.createElement('div');
+        balloons.className = 'b2-balloons';
+        const balloonPositions = [8, 20, 78, 90];
+        const balloonColors = ['#f59e0b', '#38bdf8', '#fb7185', '#22c55e'];
+        balloonPositions.forEach((left, idx) => {
+            const balloon = document.createElement('span');
+            balloon.className = 'b2-balloon';
+            balloon.style.left = `${left}%`;
+            balloon.style.background = balloonColors[idx % balloonColors.length];
+            balloon.style.animationDelay = `${idx * 0.35}s`;
+            balloons.appendChild(balloon);
+        });
+
+        layer.appendChild(confetti);
+        layer.appendChild(balloons);
+        return layer;
+    }
+
+    _buildResultCelebrationBanner() {
+        const banner = document.createElement('div');
+        banner.className = 'b2-result-celebration-banner';
+        banner.innerHTML = '<span>🎈</span><span>🎊</span><span>🎉</span><span>🎈</span>';
+        return banner;
+    }
+
+    _captureTransientEmote(state) {
+        const emotes = Array.isArray(state?.emotes) ? state.emotes : [];
+        if (emotes.length === 0) return;
+
+        const latest = emotes.reduce((best, entry) => {
+            const bestAt = Number(best?.at || 0);
+            const entryAt = Number(entry?.at || 0);
+            return entryAt > bestAt ? entry : best;
+        }, null);
+
+        const stamp = Number(latest?.at || 0);
+        if (!stamp || stamp <= this.lastSeenEmoteStamp) return;
+
+        this.lastSeenEmoteStamp = stamp;
+        this.transientEmote = {
+            text: `${latest.name}: ${b2EmoteLabel(latest.emote)}`,
+            until: Date.now() + 1450
+        };
     }
 
     destroy() {
@@ -1460,6 +1658,7 @@ class Big2UI {
         this.networkMode = false;
         this.networkState = null;
         this.game = new Big2Game(numPlayers, names);
+        this._primeWinnerAnnouncement(this.game.players, this.game.finishOrder);
         this.localSeat = this.game.currentTurn;
         this.selectedIndices = new Set();
         this.setupScreen = false;
@@ -1482,6 +1681,7 @@ class Big2UI {
             return;
         }
         this.networkState = first.state;
+        this._primeWinnerAnnouncement(first.state?.players, first.state?.finishOrder);
         this.lastNetworkHandSignature = this._handSignatureFromState(first.state);
         this._render();
 
@@ -1638,6 +1838,8 @@ class Big2UI {
     _buildNetworkGameBoard(state) {
         const board = document.createElement('div');
         board.className = 'b2-board';
+        this._captureTransientEmote(state);
+        const firstPlaceWinner = this._updateWinnerAnnouncement(state.players, state.finishOrder);
 
         let mySeat = Number.isInteger(state.mySeat) ? state.mySeat : -1;
         if (mySeat < 0 && Array.isArray(state.players)) {
@@ -1670,10 +1872,35 @@ class Big2UI {
         logEl.className = 'b2-log';
         state.log.slice().reverse().forEach(line => {
             const row = document.createElement('div');
-            row.textContent = line;
+            row.textContent = b2TranslateLogLine(line);
             logEl.appendChild(row);
         });
         board.appendChild(logEl);
+
+        const activeEmotes = (Array.isArray(state.emotes) ? state.emotes : [])
+            .filter(entry => Number(entry.at || 0) > Date.now() - 6500)
+            .slice(-5)
+            .reverse();
+        if (activeEmotes.length > 0) {
+            const emoteStream = document.createElement('div');
+            emoteStream.className = 'b2-emote-stream';
+            activeEmotes.forEach(entry => {
+                const chip = document.createElement('div');
+                chip.className = 'b2-emote-chip';
+                chip.textContent = `${entry.name}: ${b2EmoteLabel(entry.emote)}`;
+                emoteStream.appendChild(chip);
+            });
+            board.appendChild(emoteStream);
+        }
+
+        if (this.transientEmote && Date.now() < this.transientEmote.until) {
+            const burst = document.createElement('div');
+            burst.className = 'b2-emote-burst';
+            burst.textContent = this.transientEmote.text;
+            board.appendChild(burst);
+        }
+
+        this._appendWinnerUI(board, firstPlaceWinner);
 
         const me = state.players[mySeat];
         const handSection = document.createElement('div');
@@ -1727,6 +1954,24 @@ class Big2UI {
         }
         handSection.appendChild(actionRow);
 
+        const emoteRow = document.createElement('div');
+        emoteRow.className = 'b2-emote-row';
+        const emoteChoices = [
+            { key: 'nice', icon: '👍', label: b2t('emoteNice') },
+            { key: 'oof', icon: '😵', label: b2t('emoteOof') },
+            { key: 'gg', icon: '✨', label: b2t('emoteGG') }
+        ];
+        const canEmote = myTurn && Date.now() > this.lastEmoteAt + 1200;
+        emoteChoices.forEach(choice => {
+            const btn = document.createElement('button');
+            btn.className = 'b2-emote-btn';
+            btn.textContent = `${choice.icon} ${choice.label}`;
+            btn.disabled = !canEmote;
+            btn.addEventListener('click', () => this._onNetworkEmote(choice.key));
+            emoteRow.appendChild(btn);
+        });
+        handSection.appendChild(emoteRow);
+
         const info = document.createElement('div');
         info.className = 'b2-error';
         info.style.display = 'block';
@@ -1750,6 +1995,19 @@ class Big2UI {
     _buildNetworkResultScreen(state) {
         const screen = document.createElement('div');
         screen.className = 'b2-result';
+
+        const winnerSeatRaw = Array.isArray(state.finishOrder) ? state.finishOrder[0] : null;
+        const winnerSeat = Number.parseInt(String(winnerSeatRaw), 10);
+        const mySeat = Number.parseInt(String(state.mySeat), 10);
+        const winnerPlayer = Number.isInteger(winnerSeat) ? state.players[winnerSeat] : null;
+        const isWinnerBySeat = Number.isInteger(mySeat) && Number.isInteger(winnerSeat) && mySeat === winnerSeat;
+        const isWinnerById = Boolean(winnerPlayer?.id && this.currentPlayerId && winnerPlayer.id === this.currentPlayerId);
+        const isWinnerView = isWinnerBySeat || isWinnerById;
+        if (isWinnerView) {
+            screen.classList.add('is-winner-view');
+            screen.appendChild(this._buildResultCelebrationLayer());
+            screen.appendChild(this._buildResultCelebrationBanner());
+        }
 
         const title = document.createElement('h2');
         title.className = 'b2-result-title';
@@ -1783,7 +2041,7 @@ class Big2UI {
         logEl.className = 'b2-log b2-result-log';
         state.log.slice().reverse().forEach(line => {
             const row = document.createElement('div');
-            row.textContent = line;
+            row.textContent = b2TranslateLogLine(line);
             logEl.appendChild(row);
         });
         screen.appendChild(logEl);
@@ -1802,6 +2060,7 @@ class Big2UI {
     _buildGameBoard(snap) {
         const board = document.createElement('div');
         board.className = 'b2-board';
+        const firstPlaceWinner = this._updateWinnerAnnouncement(snap.players, snap.finishOrder);
 
         const opponents = snap.players
             .filter(player => player.id !== snap.currentTurn)
@@ -1826,6 +2085,8 @@ class Big2UI {
             logEl.appendChild(row);
         });
         board.appendChild(logEl);
+
+        this._appendWinnerUI(board, firstPlaceWinner);
 
         // ── Bottom: current player hand ─────────────────────────────────────
         const cur = snap.players[snap.currentTurn];
@@ -1886,6 +2147,9 @@ class Big2UI {
     _buildResultScreen(snap) {
         const screen = document.createElement('div');
         screen.className = 'b2-result';
+        screen.classList.add('is-winner-view');
+        screen.appendChild(this._buildResultCelebrationLayer());
+        screen.appendChild(this._buildResultCelebrationBanner());
 
         const title = document.createElement('h2');
         title.className = 'b2-result-title';
@@ -2008,6 +2272,35 @@ class Big2UI {
             this.networkState = result.state;
             this.lastNetworkHandSignature = this._handSignatureFromState(result.state);
         }
+        this._render();
+    }
+
+    async _onNetworkEmote(emote) {
+        if (!this.networkState?.myTurn) return;
+        if (Date.now() <= this.lastEmoteAt + 1200) return;
+
+        this.lastEmoteAt = Date.now();
+        const result = await sendEmoteSession(this.currentLobbyCode, this.currentPlayerId, emote);
+        if (!result.ok) {
+            this.networkError = b2TranslateError(result.error);
+            this._render();
+            return;
+        }
+
+        if (result.localOnly) {
+            const me = this.networkState?.players?.find(player => player.id === this.currentPlayerId);
+            this.transientEmote = {
+                text: `${me?.name || b2t('playerDefault', { n: 1 })}: ${b2EmoteLabel(emote)}`,
+                until: Date.now() + 1450
+            };
+            this.networkError = '';
+            this._render();
+            return;
+        }
+
+        this.networkError = '';
+        this.networkState = result.state;
+        this.lastNetworkHandSignature = this._handSignatureFromState(result.state);
         this._render();
     }
 

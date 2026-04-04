@@ -7,7 +7,7 @@ const translations = {
         hub: {
             kicker: 'Game Portal',
             title: 'Coriander Arcade',
-            copy: 'Four games, one hub. Pick your challenge.',
+            copy: 'Five games, one hub. Pick your challenge.',
             cards: {
                 cat: {
                     status: 'Live Now',
@@ -36,6 +36,20 @@ const translations = {
                     copy: 'The classic Chinese card game - play combos, beat the table, and be the first to empty your hand.',
                     genre: 'Card Game',
                     players: '2-4 Players'
+                },
+                tossing: {
+                    status: 'Live Now',
+                    title: 'Sky Toss',
+                    copy: 'Charge your throw, fight the wind, and land tosses into moving buckets for big points.',
+                    genre: 'Arcade Toss',
+                    players: '1 Player'
+                },
+                race: {
+                    status: 'Live Now',
+                    title: 'Two People Race',
+                    copy: 'Two players race side by side. Mash your key or tap your side to sprint to the finish first.',
+                    genre: 'Head-to-Head',
+                    players: '2 Players'
                 }
             }
         },
@@ -60,7 +74,7 @@ const translations = {
         hub: {
             kicker: '游戏大厅',
             title: 'Coriander Arcade',
-            copy: '四款游戏，一个中心。选择你的挑战。',
+            copy: '五款游戏，一个中心。选择你的挑战。',
             cards: {
                 cat: {
                     status: '正在开放',
@@ -89,6 +103,20 @@ const translations = {
                     copy: '经典中文纸牌游戏，出组合压制牌面，最先出完手牌获胜。',
                     genre: '纸牌游戏',
                     players: '2-4 名玩家'
+                },
+                tossing: {
+                    status: '正在开放',
+                    title: '天空投掷',
+                    copy: '按住蓄力，对抗风力，把投掷物投进移动桶中获得高分。',
+                    genre: '街机投掷',
+                    players: '1 名玩家'
+                },
+                race: {
+                    status: '正在开放',
+                    title: '双人竞速',
+                    copy: '两位玩家并排竞速。狂按按键或点击自己一侧，率先冲线获胜。',
+                    genre: '对战竞速',
+                    players: '2 名玩家'
                 }
             }
         },
@@ -113,7 +141,7 @@ const translations = {
         hub: {
             kicker: '게임 포털',
             title: 'Coriander Arcade',
-            copy: '네 가지 게임, 하나의 허브. 도전을 선택하세요.',
+            copy: '다섯 가지 게임, 하나의 허브. 도전을 선택하세요.',
             cards: {
                 cat: {
                     status: '지금 플레이',
@@ -142,6 +170,20 @@ const translations = {
                     copy: '클래식 카드 게임에서 조합을 내고 판을 이기며, 가장 먼저 손패를 비우세요.',
                     genre: '카드 게임',
                     players: '2-4인 플레이'
+                },
+                tossing: {
+                    status: '지금 플레이',
+                    title: '스카이 토스',
+                    copy: '차지 후 바람을 이겨 움직이는 버킷에 던져 높은 점수를 얻으세요.',
+                    genre: '아케이드 토스',
+                    players: '1인 플레이'
+                },
+                race: {
+                    status: '지금 플레이',
+                    title: '2인 레이스',
+                    copy: '두 플레이어가 나란히 달립니다. 각자 키를 연타하거나 화면 한쪽을 터치해 먼저 결승선에 도착하세요.',
+                    genre: '대전 레이싱',
+                    players: '2인 플레이'
                 }
             }
         },
@@ -331,7 +373,7 @@ function applyLanguage(lang) {
     const hubTitle  = document.getElementById('hub-title');
     if (hubTitle)  hubTitle.textContent  = translation.hub?.title  ?? 'Coriander Arcade';
     const hubCopy   = document.getElementById('hub-copy');
-    if (hubCopy)   hubCopy.textContent   = translation.hub?.copy   ?? 'Four games, one hub. Pick your challenge.';
+    if (hubCopy)   hubCopy.textContent   = translation.hub?.copy   ?? 'Five games, one hub. Pick your challenge.';
 
     const hubCardMap = {
         'cat-card-status': translation.hub?.cards?.cat?.status,
@@ -353,7 +395,17 @@ function applyLanguage(lang) {
         'big2-card-title': translation.hub?.cards?.big2?.title,
         'big2-card-copy': translation.hub?.cards?.big2?.copy,
         'big2-card-genre': translation.hub?.cards?.big2?.genre,
-        'big2-card-players': translation.hub?.cards?.big2?.players
+        'big2-card-players': translation.hub?.cards?.big2?.players,
+        'toss-card-status': translation.hub?.cards?.tossing?.status,
+        'toss-card-title': translation.hub?.cards?.tossing?.title,
+        'toss-card-copy': translation.hub?.cards?.tossing?.copy,
+        'toss-card-genre': translation.hub?.cards?.tossing?.genre,
+        'toss-card-players': translation.hub?.cards?.tossing?.players,
+        'race-card-status': translation.hub?.cards?.race?.status,
+        'race-card-title': translation.hub?.cards?.race?.title,
+        'race-card-copy': translation.hub?.cards?.race?.copy,
+        'race-card-genre': translation.hub?.cards?.race?.genre,
+        'race-card-players': translation.hub?.cards?.race?.players
     };
     Object.keys(hubCardMap).forEach(id => {
         const el = document.getElementById(id);

@@ -1,23 +1,14 @@
-const gameConfigs = {
-    'cat-adventure': {
-        scene: GameScene,
-        gravityY: 500
-    },
-    'turbo-traffic': {
-        scene: TrafficRunnerScene,
-        gravityY: 0
-    },
-    'star-paws-shooter': {
-        scene: ShootingScene,
-        gravityY: 0
-    }
-};
-
 let game = null;
 
-function createConfig(gameKey) {
-    const selectedConfig = gameConfigs[gameKey] || gameConfigs['cat-adventure'];
+const sceneMap = {
+    'cat-adventure': () => window.GameScene,
+    'turbo-traffic': () => window.TrafficRunnerScene,
+    'star-paws-shooter': () => window.ShootingScene,
+    'tossing-game': () => window.TossingScene,
+    'two-people-race': () => window.TwoPlayerRaceScene
+};
 
+function createConfig(sceneClass) {
     return {
         type: Phaser.AUTO,
         parent: 'game-container',
@@ -30,11 +21,11 @@ function createConfig(gameKey) {
         physics: {
             default: 'arcade',
             arcade: {
-                gravity: { y: selectedConfig.gravityY },
+                gravity: { y: 500 },
                 debug: false
             }
         },
-        scene: selectedConfig.scene,
+        scene: sceneClass,
         render: {
             pixelArt: true,
             antialias: false
@@ -43,22 +34,23 @@ function createConfig(gameKey) {
 }
 
 // Start game function called by navigation
-function startGame(gameKey = null) {
-    const selectedGameKey = gameKey || (window.getActiveGameKey ? window.getActiveGameKey() : 'cat-adventure');
+function startGame(gameKey = 'cat-adventure') {
+    if (!game) {
+        const sceneFactory = sceneMap[gameKey] || sceneMap['cat-adventure'];
+        const sceneClass = sceneFactory ? sceneFactory() : window.GameScene;
 
-    if (game && window.currentRunningGameKey === selectedGameKey) {
-        return;
+        if (!sceneClass) {
+            console.error(`Unable to start game: scene for key "${gameKey}" was not found.`);
+            return;
+        }
+
+        window.currentRunningGameKey = gameKey;
+        game = new Phaser.Game(createConfig(sceneClass));
+
+        // Make game accessible globally
+        window.currentGameInstance = game;
+        window.game = game;
     }
-
-    if (game) {
-        stopGame();
-    }
-
-    const config = createConfig(selectedGameKey);
-    game = new Phaser.Game(config);
-    window.currentRunningGameKey = selectedGameKey;
-    window.currentGameInstance = game;
-    window.game = game;
 }
 
 // Make startGame available globally
