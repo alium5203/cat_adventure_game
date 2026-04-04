@@ -1,4 +1,5 @@
 const RACE_DEPLOYED_ORIGIN = 'https://agile-brushlands-24267-9cfa491ed233.herokuapp.com';
+const RACE_LAPS_TO_WIN_DEFAULT = 3;
 
 class TwoPlayerRaceScene extends Phaser.Scene {
     constructor() {
@@ -13,6 +14,7 @@ class TwoPlayerRaceScene extends Phaser.Scene {
         this.lastBoostAt = 0;
         this.raceMode = null;
         this.aiTickMs = 0;
+        this.lapsToWin = RACE_LAPS_TO_WIN_DEFAULT;
     }
 
     create() {
@@ -23,6 +25,12 @@ class TwoPlayerRaceScene extends Phaser.Scene {
         this.trackFinishX = 1090;
         this.topLaneY = 230;
         this.bottomLaneY = 390;
+        this.trackCenterX = 600;
+        this.trackCenterY = 310;
+        this.trackOuterRx = 430;
+        this.trackOuterRy = 140;
+        this.trackInnerRx = 372;
+        this.trackInnerRy = 94;
 
         this.player1 = { progress: 0, sprite: null, label: null };
         this.player2 = { progress: 0, sprite: null, label: null };
@@ -105,12 +113,11 @@ class TwoPlayerRaceScene extends Phaser.Scene {
 
         const root = document.createElement('div');
         root.id = 'race-online-overlay';
-        root.style.position = 'absolute';
-        root.style.inset = '0';
         root.style.display = 'flex';
         root.style.alignItems = 'center';
+        const p2Clamped = Math.max(0, Math.min(this.lapsToWin, Number(state.progress?.[1] || 0)));
         root.style.justifyContent = 'center';
-        root.style.zIndex = '320';
+        this.player2.progress = p2Clamped;
         root.style.background = 'rgba(7, 24, 45, 0.28)';
 
         root.innerHTML = `
@@ -192,8 +199,8 @@ class TwoPlayerRaceScene extends Phaser.Scene {
         this.raceMode = null;
         this.player1.progress = 0;
         this.player2.progress = 0;
-        if (this.player1.sprite) this.player1.sprite.x = this.trackStartX;
-        if (this.player2.sprite) this.player2.sprite.x = this.trackStartX;
+        this.placeRacer(this.player1, 0);
+        this.placeRacer(this.player2, 1);
         this.updateProgressHud();
         if (this.statusText) {
             this.statusText.setText('Waiting for room setup...');
@@ -211,14 +218,14 @@ class TwoPlayerRaceScene extends Phaser.Scene {
 
         this.player1.progress = 0;
         this.player2.progress = 0;
-        this.player1.sprite.x = this.trackStartX;
-        this.player2.sprite.x = this.trackStartX;
+        this.placeRacer(this.player1, 0);
+        this.placeRacer(this.player2, 1);
 
         if (this.player1.label) this.player1.label.setText(name || 'You');
         if (this.player2.label) this.player2.label.setText('AI Cat');
 
         this.updateProgressHud();
-        this.statusText.setText('AI race started. Tap or press SPACE to sprint. Press R for rematch.');
+        this.statusText.setText(`AI kart race started. First to ${this.lapsToWin} laps wins. Tap or press SPACE to boost.`);
         this.unmountOverlay();
     }
 
@@ -369,12 +376,15 @@ class TwoPlayerRaceScene extends Phaser.Scene {
         this.mySeat = Number.isInteger(state.mySeat) ? state.mySeat : this.mySeat;
 
         const p1 = Math.max(0, Math.min(1, Number(state.progress?.[0] || 0)));
-        const p2 = Math.max(0, Math.min(1, Number(state.progress?.[1] || 0)));
+        const p2 = Math.max(0, Math.min(this.lapsToWin, Number(state.progress?.[1] || 0)));
+        this.lapsToWin = Math.max(1, Number(state.lapsToWin || this.lapsToWin || RACE_LAPS_TO_WIN_DEFAULT));
+        const p1Clamped = Math.max(0, Math.min(this.lapsToWin, Number(state.progress?.[0] || 0)));
         this.player1.progress = p1;
+        this.player1.progress = p1Clamped;
         this.player2.progress = p2;
 
-        this.player1.sprite.x = Phaser.Math.Linear(this.trackStartX, this.trackFinishX, p1);
-        this.player2.sprite.x = Phaser.Math.Linear(this.trackStartX, this.trackFinishX, p2);
+        this.placeRacer(this.player1, 0);
+        this.placeRacer(this.player2, 1);
 
         const topName = state.players?.find(player => player.seat === 0)?.name || 'Player 1';
         const bottomName = state.players?.find(player => player.seat === 1)?.name || 'Player 2';
@@ -391,7 +401,7 @@ class TwoPlayerRaceScene extends Phaser.Scene {
             this.raceActive = false;
         } else if (state.status === 'in-progress') {
             const myLabel = this.mySeat === 0 ? topName : bottomName;
-            this.statusText.setText(`Room ${this.raceCode} | You are ${myLabel}. Tap or press SPACE to sprint.`);
+            this.statusText.setText(`Room ${this.raceCode} | Kart: ${myLabel}. Race to ${this.lapsToWin} laps.`);
             this.raceActive = true;
         }
     }
@@ -438,8 +448,8 @@ class TwoPlayerRaceScene extends Phaser.Scene {
 
     localBoost() {
         if (!this.raceActive || this.raceMode !== 'ai') return;
-        this.player1.progress = Math.min(1, this.player1.progress + 0.022);
-        this.player1.sprite.x = Phaser.Math.Linear(this.trackStartX, this.trackFinishX, this.player1.progress);
+        this.player1.progress = Math.min(this.lapsToWin, this.player1.progress + 0.05);
+        this.placeRacer(this.player1, 0);
         this.checkAiFinish();
         this.updateProgressHud();
     }
@@ -451,8 +461,8 @@ class TwoPlayerRaceScene extends Phaser.Scene {
         this.aiTickMs = 0;
 
         const step = 0.011 + (Math.random() * 0.016);
-        this.player2.progress = Math.min(1, this.player2.progress + step);
-        this.player2.sprite.x = Phaser.Math.Linear(this.trackStartX, this.trackFinishX, this.player2.progress);
+        this.player2.progress = Math.min(this.lapsToWin, this.player2.progress + step);
+        this.placeRacer(this.player2, 1);
 
         this.checkAiFinish();
         this.updateProgressHud();
@@ -460,13 +470,35 @@ class TwoPlayerRaceScene extends Phaser.Scene {
 
     checkAiFinish() {
         if (this.raceMode !== 'ai' || !this.raceActive) return;
-        if (this.player1.progress < 1 && this.player2.progress < 1) return;
+        if (this.player1.progress < this.lapsToWin && this.player2.progress < this.lapsToWin) return;
 
         this.raceActive = false;
-        const winnerSeat = this.player1.progress >= 1 ? 0 : 1;
+        const winnerSeat = this.player1.progress >= this.lapsToWin ? 0 : 1;
         const winnerName = winnerSeat === 0 ? (this.player1.label ? this.player1.label.text : 'You') : 'AI Cat';
         const youWin = winnerSeat === 0;
         this.statusText.setText(`${winnerName} wins! ${youWin ? 'You win.' : 'You lose.'} Press R for rematch.`);
+    }
+
+    getLanePoint(progress, laneIndex) {
+        const laneShift = laneIndex === 0 ? -16 : 16;
+        const rx = Phaser.Math.Clamp(this.trackOuterRx + laneShift, 120, 560);
+        const ry = Phaser.Math.Clamp(this.trackOuterRy + laneShift * 0.6, 70, 240);
+        const normalized = Phaser.Math.Wrap(progress, 0, 1);
+        const angle = -Math.PI / 2 + (normalized * Math.PI * 2);
+        const x = this.trackCenterX + (Math.cos(angle) * rx);
+        const y = this.trackCenterY + (Math.sin(angle) * ry);
+        const tangentX = -Math.sin(angle) * rx;
+        const tangentY = Math.cos(angle) * ry;
+        const rotation = Math.atan2(tangentY, tangentX);
+        return { x, y, rotation };
+    }
+
+    placeRacer(player, laneIndex) {
+        if (!player || !player.sprite) return;
+        const point = this.getLanePoint(player.progress, laneIndex);
+        player.sprite.x = point.x;
+        player.sprite.y = point.y;
+        player.sprite.rotation = point.rotation;
     }
 
     drawBackdrop() {
@@ -534,84 +566,63 @@ class TwoPlayerRaceScene extends Phaser.Scene {
         const laneGraphics = this.add.graphics();
 
         laneGraphics.fillStyle(0x334155, 1);
-        laneGraphics.fillRoundedRect(this.trackStartX - 58, this.topLaneY - 48, this.trackFinishX - this.trackStartX + 116, 256, 44);
-
-        laneGraphics.fillStyle(0xef4444, 1);
-        laneGraphics.fillRoundedRect(this.trackStartX - 52, this.topLaneY - 42, this.trackFinishX - this.trackStartX + 104, 16, 12);
-        laneGraphics.fillRoundedRect(this.trackStartX - 52, this.bottomLaneY + 26, this.trackFinishX - this.trackStartX + 104, 16, 12);
-
-        laneGraphics.fillStyle(0xffffff, 1);
-        for (let x = this.trackStartX - 48; x < this.trackFinishX + 52; x += 24) {
-            laneGraphics.fillRect(x, this.topLaneY - 39, 12, 10);
-            laneGraphics.fillRect(x, this.bottomLaneY + 29, 12, 10);
-        }
-
+        laneGraphics.fillEllipse(this.trackCenterX, this.trackCenterY, this.trackOuterRx * 2 + 76, this.trackOuterRy * 2 + 76);
         laneGraphics.fillStyle(0x4f5d75, 1);
-        laneGraphics.fillRoundedRect(this.trackStartX - 38, this.topLaneY - 28, this.trackFinishX - this.trackStartX + 76, 56, 18);
-        laneGraphics.fillRoundedRect(this.trackStartX - 38, this.bottomLaneY - 28, this.trackFinishX - this.trackStartX + 76, 56, 18);
+        laneGraphics.fillEllipse(this.trackCenterX, this.trackCenterY, this.trackOuterRx * 2, this.trackOuterRy * 2);
+        laneGraphics.fillStyle(0x76c893, 1);
+        laneGraphics.fillEllipse(this.trackCenterX, this.trackCenterY, this.trackInnerRx * 2, this.trackInnerRy * 2);
 
-        laneGraphics.fillStyle(0x64748b, 1);
-        laneGraphics.fillRect(this.trackStartX - 28, 308, this.trackFinishX - this.trackStartX + 56, 6);
+        laneGraphics.lineStyle(6, 0xffffff, 0.28);
+        laneGraphics.strokeEllipse(this.trackCenterX, this.trackCenterY, (this.trackOuterRx + this.trackInnerRx), (this.trackOuterRy + this.trackInnerRy));
 
-        laneGraphics.fillStyle(0xf4a261, 1);
-        laneGraphics.fillRect(this.trackStartX - 6, this.topLaneY - 31, 12, 62);
-        laneGraphics.fillRect(this.trackStartX - 6, this.bottomLaneY - 31, 12, 62);
-
-        laneGraphics.fillStyle(0xe63946, 1);
-        laneGraphics.fillRect(this.trackFinishX - 6, this.topLaneY - 31, 12, 62);
-        laneGraphics.fillRect(this.trackFinishX - 6, this.bottomLaneY - 31, 12, 62);
-
-        laneGraphics.fillStyle(0xffffff, 1);
-        for (let y = this.topLaneY - 31; y <= this.topLaneY + 25; y += 12) {
-            laneGraphics.fillRect(this.trackFinishX - 20, y, 14, 6);
-            laneGraphics.fillRect(this.trackFinishX + 6, y + 6, 14, 6);
-        }
-        for (let y = this.bottomLaneY - 31; y <= this.bottomLaneY + 25; y += 12) {
-            laneGraphics.fillRect(this.trackFinishX - 20, y, 14, 6);
-            laneGraphics.fillRect(this.trackFinishX + 6, y + 6, 14, 6);
+        for (let i = 0; i < 48; i++) {
+            const angle = (i / 48) * Math.PI * 2;
+            const rx = this.trackOuterRx + 33;
+            const ry = this.trackOuterRy + 33;
+            const x = this.trackCenterX + Math.cos(angle) * rx;
+            const y = this.trackCenterY + Math.sin(angle) * ry;
+            laneGraphics.fillStyle(i % 2 === 0 ? 0xef4444 : 0xffffff, 1);
+            laneGraphics.fillCircle(x, y, 8);
         }
 
-        for (let i = this.trackStartX + 30; i < this.trackFinishX - 10; i += 35) {
-            laneGraphics.fillStyle(0xffffff, 0.72);
-            laneGraphics.fillRect(i, this.topLaneY - 2, 16, 4);
-            laneGraphics.fillRect(i, this.bottomLaneY - 2, 16, 4);
+        for (let i = 0; i < 28; i++) {
+            const angle = (i / 28) * Math.PI * 2;
+            const rx = (this.trackOuterRx + this.trackInnerRx) / 2;
+            const ry = (this.trackOuterRy + this.trackInnerRy) / 2;
+            const x = this.trackCenterX + Math.cos(angle) * rx;
+            const y = this.trackCenterY + Math.sin(angle) * ry;
+            laneGraphics.fillStyle(0xffffff, 0.64);
+            laneGraphics.fillCircle(x, y, 5);
         }
 
         const gantry = this.add.graphics();
         gantry.fillStyle(0x1e293b, 1);
-        gantry.fillRect(this.trackFinishX - 18, this.topLaneY - 82, 10, 48);
-        gantry.fillRect(this.trackFinishX + 22, this.topLaneY - 82, 10, 48);
-        gantry.fillRoundedRect(this.trackFinishX - 32, this.topLaneY - 110, 76, 28, 8);
-        this.add.text(this.trackFinishX + 6, this.topLaneY - 96, 'FINISH', {
+        gantry.fillRect(this.trackCenterX - 40, 144, 10, 54);
+        gantry.fillRect(this.trackCenterX + 30, 144, 10, 54);
+        gantry.fillRoundedRect(this.trackCenterX - 52, 118, 94, 28, 8);
+        this.add.text(this.trackCenterX - 5, 132, 'FINISH', {
             fontSize: '14px',
             fontFamily: 'Nunito, Arial, sans-serif',
             color: '#ffffff',
             fontStyle: 'bold'
         }).setOrigin(0.5);
 
-        this.add.text(this.trackStartX + 8, this.topLaneY - 52, 'START', {
+        this.add.text(this.trackCenterX - 128, 130, 'START', {
             fontSize: '14px',
             fontFamily: 'Nunito, Arial, sans-serif',
             color: '#fff7ed',
             fontStyle: 'bold'
         }).setOrigin(0.5);
 
-        this.add.text(this.trackStartX + 8, this.bottomLaneY - 52, 'START', {
-            fontSize: '14px',
-            fontFamily: 'Nunito, Arial, sans-serif',
-            color: '#fff7ed',
-            fontStyle: 'bold'
-        }).setOrigin(0.5);
-
-        this.player1.label = this.add.text(36, this.topLaneY - 12, 'Player 1', {
-            fontSize: '28px',
+        this.player1.label = this.add.text(88, 198, 'Player 1', {
+            fontSize: '24px',
             fontFamily: 'Nunito, Arial, sans-serif',
             color: '#ffffff',
             fontStyle: 'bold'
         });
 
-        this.player2.label = this.add.text(36, this.bottomLaneY - 12, 'Player 2', {
-            fontSize: '28px',
+        this.player2.label = this.add.text(88, 384, 'Player 2', {
+            fontSize: '24px',
             fontFamily: 'Nunito, Arial, sans-serif',
             color: '#ffffff',
             fontStyle: 'bold'
@@ -619,14 +630,17 @@ class TwoPlayerRaceScene extends Phaser.Scene {
     }
 
     createRacers() {
-        this.player1.sprite = this.add.rectangle(this.trackStartX, this.topLaneY, 40, 34, 0xffb703);
-        this.player2.sprite = this.add.rectangle(this.trackStartX, this.bottomLaneY, 40, 34, 0x577590);
+        this.player1.sprite = this.add.rectangle(this.trackCenterX - this.trackOuterRx, this.trackCenterY, 40, 22, 0xffb703);
+        this.player2.sprite = this.add.rectangle(this.trackCenterX - this.trackOuterRx, this.trackCenterY + 20, 40, 22, 0x577590);
 
         this.physics.add.existing(this.player1.sprite);
         this.physics.add.existing(this.player2.sprite);
 
         this.player1.sprite.body.setAllowGravity(false);
         this.player2.sprite.body.setAllowGravity(false);
+
+        this.placeRacer(this.player1, 0);
+        this.placeRacer(this.player2, 1);
     }
 
     bindControls() {
@@ -671,14 +685,16 @@ class TwoPlayerRaceScene extends Phaser.Scene {
     }
 
     updateProgressHud() {
-        const p1Value = Math.floor(this.player1.progress * 100);
-        const p2Value = Math.floor(this.player2.progress * 100);
+        const p1Lap = Math.min(this.lapsToWin, Math.floor(this.player1.progress) + 1);
+        const p2Lap = Math.min(this.lapsToWin, Math.floor(this.player2.progress) + 1);
+        const p1Progress = this.player1.progress >= this.lapsToWin ? 100 : Math.floor((this.player1.progress % 1) * 100);
+        const p2Progress = this.player2.progress >= this.lapsToWin ? 100 : Math.floor((this.player2.progress % 1) * 100);
 
         const scoreValue = document.getElementById('score-value');
         const levelValue = document.getElementById('level-value');
 
-        if (scoreValue) scoreValue.textContent = `${p1Value}%`;
-        if (levelValue) levelValue.textContent = `${p2Value}%`;
+        if (scoreValue) scoreValue.textContent = `L${p1Lap}/${this.lapsToWin} ${p1Progress}%`;
+        if (levelValue) levelValue.textContent = `L${p2Lap}/${this.lapsToWin} ${p2Progress}%`;
     }
 }
 

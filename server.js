@@ -7,6 +7,7 @@ const PORT = Number(process.env.PORT || 8000);
 const ROOT_DIR = __dirname;
 const LOBBY_TTL_MS = 12 * 60 * 60 * 1000;
 const CODE_CHARS = '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ';
+const RACE_LAPS_TO_WIN = 3;
 
 const MIME_TYPES = {
     '.html': 'text/html; charset=utf-8',
@@ -485,6 +486,7 @@ function normalizeRaceLobby(lobby) {
         startedAt: lobby.startedAt || null,
         finishedAt: lobby.finishedAt || null,
         status: lobby.status,
+        lapsToWin: RACE_LAPS_TO_WIN,
         winner: typeof lobby.winner === 'number' ? lobby.winner : null,
         players: lobby.players.map(player => ({
             id: player.id,
@@ -582,6 +584,7 @@ function raceStateForPlayer(code, playerId) {
         state: {
             code: lobby.code,
             status: lobby.status,
+            lapsToWin: RACE_LAPS_TO_WIN,
             mySeat,
             winner: typeof lobby.winner === 'number' ? lobby.winner : null,
             progress: [lobby.progress[0] || 0, lobby.progress[1] || 0],
@@ -612,8 +615,8 @@ function raceBoost(code, playerId) {
         return { ok: true, lobby, state: state.state };
     }
 
-    lobby.progress[seat] = Math.min(1, (lobby.progress[seat] || 0) + 0.022);
-    if (lobby.progress[seat] >= 1) {
+    lobby.progress[seat] = Math.min(RACE_LAPS_TO_WIN, (lobby.progress[seat] || 0) + 0.045);
+    if (lobby.progress[seat] >= RACE_LAPS_TO_WIN) {
         lobby.winner = seat;
         lobby.status = 'finished';
         lobby.finishedAt = Date.now();
