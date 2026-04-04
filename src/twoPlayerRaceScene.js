@@ -493,6 +493,31 @@ class TwoPlayerRaceScene extends Phaser.Scene {
         return { x, y, rotation };
     }
 
+    fillEllipseCompat(graphics, x, y, width, height, color, alpha = 1) {
+        graphics.fillStyle(color, alpha);
+        if (typeof graphics.fillEllipse === 'function') {
+            graphics.fillEllipse(x, y, width, height);
+            return;
+        }
+        if (typeof graphics.fillEllipseShape === 'function') {
+            graphics.fillEllipseShape(new Phaser.Geom.Ellipse(x, y, width, height));
+            return;
+        }
+        graphics.fillCircle(x, y, Math.max(8, Math.floor(Math.min(width, height) / 2)));
+    }
+
+    strokeEllipseCompat(graphics, x, y, width, height, lineWidth, color, alpha = 1) {
+        graphics.lineStyle(lineWidth, color, alpha);
+        if (typeof graphics.strokeEllipse === 'function') {
+            graphics.strokeEllipse(x, y, width, height);
+            return;
+        }
+        if (typeof graphics.strokeEllipseShape === 'function') {
+            graphics.strokeEllipseShape(new Phaser.Geom.Ellipse(x, y, width, height));
+            return;
+        }
+    }
+
     placeRacer(player, laneIndex) {
         if (!player || !player.sprite) return;
         const point = this.getLanePoint(player.progress, laneIndex);
@@ -565,15 +590,11 @@ class TwoPlayerRaceScene extends Phaser.Scene {
     drawTrack() {
         const laneGraphics = this.add.graphics();
 
-        laneGraphics.fillStyle(0x334155, 1);
-        laneGraphics.fillEllipse(this.trackCenterX, this.trackCenterY, this.trackOuterRx * 2 + 76, this.trackOuterRy * 2 + 76);
-        laneGraphics.fillStyle(0x4f5d75, 1);
-        laneGraphics.fillEllipse(this.trackCenterX, this.trackCenterY, this.trackOuterRx * 2, this.trackOuterRy * 2);
-        laneGraphics.fillStyle(0x76c893, 1);
-        laneGraphics.fillEllipse(this.trackCenterX, this.trackCenterY, this.trackInnerRx * 2, this.trackInnerRy * 2);
+        this.fillEllipseCompat(laneGraphics, this.trackCenterX, this.trackCenterY, this.trackOuterRx * 2 + 76, this.trackOuterRy * 2 + 76, 0x334155, 1);
+        this.fillEllipseCompat(laneGraphics, this.trackCenterX, this.trackCenterY, this.trackOuterRx * 2, this.trackOuterRy * 2, 0x4f5d75, 1);
+        this.fillEllipseCompat(laneGraphics, this.trackCenterX, this.trackCenterY, this.trackInnerRx * 2, this.trackInnerRy * 2, 0x76c893, 1);
 
-        laneGraphics.lineStyle(6, 0xffffff, 0.28);
-        laneGraphics.strokeEllipse(this.trackCenterX, this.trackCenterY, (this.trackOuterRx + this.trackInnerRx), (this.trackOuterRy + this.trackInnerRy));
+        this.strokeEllipseCompat(laneGraphics, this.trackCenterX, this.trackCenterY, (this.trackOuterRx + this.trackInnerRx), (this.trackOuterRy + this.trackInnerRy), 6, 0xffffff, 0.28);
 
         for (let i = 0; i < 48; i++) {
             const angle = (i / 48) * Math.PI * 2;
