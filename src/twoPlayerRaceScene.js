@@ -23,8 +23,10 @@ class TwoPlayerRaceScene extends Phaser.Scene {
 
         // Mario Kart-style perspective track
         this.trackCenterX = 600;
-        this.player1 = { progress: 0, label: null, itemCount: 0, sprite: null };
-        this.player2 = { progress: 0, label: null, itemCount: 0, sprite: null };
+        this.player1 = { progress: 0, label: null, itemCount: 0, sprite: null, lane: -1 };
+        this.player2 = { progress: 0, label: null, itemCount: 0, sprite: null, lane: 1 };
+        this.roadScroll = 0;
+        this.roadCurve = 0;
 
         this.drawPerspectiveRoad();
         this.createPlayerKarts();
@@ -198,6 +200,8 @@ class TwoPlayerRaceScene extends Phaser.Scene {
 
         this.player1.progress = 0;
         this.player2.progress = 0;
+        this.player1.lane = -1;
+        this.player2.lane = 1;
         this.player1.label = name || 'You';
         this.player2.label = 'AI Cat';
 
@@ -449,72 +453,95 @@ class TwoPlayerRaceScene extends Phaser.Scene {
     }
 
     drawPerspectiveRoad() {
-        const graphics = this.add.graphics();
-        
-        // Sky
-        graphics.fillStyle(0x87ceeb, 1);
-        graphics.fillRect(0, 0, 1200, 300);
-        
-        // Grass
-        graphics.fillStyle(0x2d8e2d, 1);
-        graphics.fillRect(0, 300, 1200, 300);
+        this.bgGraphics = this.add.graphics();
+        this.roadGraphics = this.add.graphics();
+        this.fxGraphics = this.add.graphics();
 
-        // Draw road segments with perspective from bottom toward horizon
-        const numSegments = 40;
-        for (let i = 0; i < numSegments; i++) {
-            const distFromCamera = (i / numSegments);
-            const y = 500 - (i * 10);
-            if (y < 100) break;
-            
-            // Perspective: closer = wider
-            const perspective = 0.3 + (distFromCamera * 0.7);
-            const roadWidth = 400 * perspective;
-            const leftX = this.trackCenterX - roadWidth / 2;
-            const rightX = this.trackCenterX + roadWidth / 2;
-            
-            const nextY = 500 - ((i + 1) * 10);
-            const nextPerspective = 0.3 + (((i + 1) / numSegments) * 0.7);
-            const nextRoadWidth = 400 * nextPerspective;
-            const nextLeftX = this.trackCenterX - nextRoadWidth / 2;
-            const nextRightX = this.trackCenterX + nextRoadWidth / 2;
-            
-            // Road surface drawn as two triangles for Phaser 3.55 compatibility.
-            graphics.fillStyle(i % 2 === 0 ? 0x444444 : 0x555555, 1);
-            graphics.fillTriangle(leftX, y, rightX, y, nextRightX, nextY);
-            graphics.fillTriangle(leftX, y, nextRightX, nextY, nextLeftX, nextY);
+        // Static sky/ground base.
+        this.bgGraphics.fillStyle(0x85d6ff, 1);
+        this.bgGraphics.fillRect(0, 0, 1200, 290);
+        this.bgGraphics.fillStyle(0x2f9a2f, 1);
+        this.bgGraphics.fillRect(0, 290, 1200, 310);
 
-            // Center yellow line
-            if (i % 4 === 0) {
-                const centerTop = Math.min(y, nextY);
-                const centerHeight = Math.max(1, Math.abs(nextY - y));
-                graphics.fillStyle(0xffff00, 1);
-                graphics.fillRect(this.trackCenterX - 4, centerTop, 8, centerHeight);
-            }
-        }
-
-        // Trees lining the track
-        graphics.fillStyle(0x1a5c1a, 1);
-        for (let i = 0; i < 8; i++) {
-            graphics.fillRect(30 + i * 140, 100, 40, 250);
-            graphics.fillRect(1130 + i * 140, 100, 40, 250);
-        }
-
-        this.roadGraphics = graphics;
+        this.renderRoad(0, 0);
     }
 
     createPlayerKarts() {
-        // Player 1 kart (yellow/gold) - left side
-        this.player1.sprite = this.add.rectangle(480, 450, 50, 35, 0xffb703);
-        this.add.text(480, 465, 'P1', { fontSize: '12px', fill: '#000', fontStyle: 'bold' }).setOrigin(0.5);
+        const makeKart = (x, y, color, textColor, tag) => {
+            const body = this.add.rectangle(x, y, 56, 30, color).setStrokeStyle(3, 0x1f2937, 1);
+            const spoiler = this.add.rectangle(x, y + 16, 42, 6, 0x111827);
+            const label = this.add.text(x, y, tag, {
+                fontSize: '12px',
+                fontFamily: 'Nunito, Arial, sans-serif',
+                color: textColor,
+                fontStyle: 'bold'
+            }).setOrigin(0.5);
+            return this.add.container(0, 0, [body, spoiler, label]);
+        };
 
-        // Player 2 kart (blue) - right side
-        this.player2.sprite = this.add.rectangle(720, 450, 50, 35, 0x577590);
-        this.add.text(720, 465, 'P2', { fontSize: '12px', fill: '#fff', fontStyle: 'bold' }).setOrigin(0.5);
+        this.player1.sprite = makeKart(520, 468, 0xffc107, '#1f2937', 'P1');
+        this.player2.sprite = makeKart(680, 430, 0x4f83cc, '#ffffff', 'P2');
+    }
 
-        this.physics.add.existing(this.player1.sprite);
-        this.physics.add.existing(this.player2.sprite);
-        this.player1.sprite.body.setAllowGravity(false);
-        this.player2.sprite.body.setAllowGravity(false);
+    renderRoad(scroll, curve) {
+        if (!this.roadGraphics || !this.fxGraphics) return;
+
+        this.roadGraphics.clear();
+        this.fxGraphics.clear();
+
+        const segCount = 42;
+        const horizonY = 118;
+        const bottomY = 560;
+        const band = (bottomY - horizonY) / segCount;
+
+        // Distant hills for depth.
+        this.fxGraphics.fillStyle(0x62b15b, 1);
+        this.fxGraphics.fillCircle(120, 290, 120);
+        this.fxGraphics.fillCircle(360, 292, 155);
+        this.fxGraphics.fillCircle(760, 298, 180);
+        this.fxGraphics.fillCircle(1040, 296, 145);
+
+        for (let i = 0; i < segCount; i++) {
+            const t0 = i / segCount;
+            const t1 = (i + 1) / segCount;
+            const y0 = bottomY - (i * band);
+            const y1 = bottomY - ((i + 1) * band);
+
+            const w0 = Phaser.Math.Linear(520, 130, t0);
+            const w1 = Phaser.Math.Linear(520, 130, t1);
+
+            const bend0 = curve * (1 - t0) * (1 - t0) * 260;
+            const bend1 = curve * (1 - t1) * (1 - t1) * 260;
+
+            const cx0 = this.trackCenterX + bend0;
+            const cx1 = this.trackCenterX + bend1;
+
+            // Main asphalt.
+            this.roadGraphics.fillStyle(i % 2 === 0 ? 0x3b3b3b : 0x454545, 1);
+            this.roadGraphics.fillTriangle(cx0 - w0, y0, cx0 + w0, y0, cx1 + w1, y1);
+            this.roadGraphics.fillTriangle(cx0 - w0, y0, cx1 + w1, y1, cx1 - w1, y1);
+
+            // Curbs.
+            this.roadGraphics.fillStyle(i % 2 === 0 ? 0xfff4f4 : 0xe11d48, 1);
+            this.roadGraphics.fillRect(cx0 - w0 - 16, y1, 16, Math.max(1, y0 - y1));
+            this.roadGraphics.fillRect(cx0 + w0, y1, 16, Math.max(1, y0 - y1));
+
+            // Lane dashes.
+            if (((i + Math.floor(scroll * 20)) % 5) === 0) {
+                const dashW = Phaser.Math.Linear(16, 5, t0);
+                const dashH = Math.max(2, Math.floor((y0 - y1) * 0.7));
+                this.roadGraphics.fillStyle(0xffe66d, 1);
+                this.roadGraphics.fillRect(cx0 - (dashW / 2), y1 + 1, dashW, dashH);
+            }
+
+            // Roadside posts for speed sensation.
+            if (i % 4 === 0) {
+                const postH = Phaser.Math.Linear(24, 8, t0);
+                this.fxGraphics.fillStyle(0x166534, 1);
+                this.fxGraphics.fillRect(cx0 - w0 - 48, y1 - postH, 8, postH);
+                this.fxGraphics.fillRect(cx0 + w0 + 40, y1 - postH, 8, postH);
+            }
+        }
     }
 
     createBoostEffect() {
@@ -533,6 +560,8 @@ class TwoPlayerRaceScene extends Phaser.Scene {
         this.input.keyboard.addKey('R');
         this.input.keyboard.addKey('A');
         this.input.keyboard.addKey('D');
+        this.input.keyboard.addKey('LEFT');
+        this.input.keyboard.addKey('RIGHT');
 
         this.input.on('pointerdown', () => {
             this.sendBoost();
@@ -546,17 +575,25 @@ class TwoPlayerRaceScene extends Phaser.Scene {
             this.sendRematch();
         });
 
-        // Lane switching with A/D keys
-        this.input.keyboard.on('keydown-A', () => {
-            if (this.player1.sprite && this.player1.sprite.x > 350) {
-                this.player1.sprite.x -= 80;
-            }
+        this.input.keyboard.on('keydown-D', () => {
+            this.player1.lane = 1;
         });
 
-        this.input.keyboard.on('keydown-D', () => {
-            if (this.player1.sprite && this.player1.sprite.x < 650) {
-                this.player1.sprite.x += 80;
-            }
+        this.input.keyboard.on('keydown-A', () => {
+            this.player1.lane = -1;
+        });
+
+        this.input.keyboard.on('keydown-LEFT', () => {
+            this.player2.lane = -1;
+        });
+
+        this.input.keyboard.on('keydown-RIGHT', () => {
+            this.player2.lane = 1;
+        });
+
+        this.input.on('pointermove', pointer => {
+            if (!pointer.isDown) return;
+            this.player1.lane = pointer.x < 600 ? -1 : 1;
         });
     }
 
@@ -597,10 +634,22 @@ class TwoPlayerRaceScene extends Phaser.Scene {
     }
 
     update(_time, delta) {
-        if (this.raceActive && this.roadGraphics) {
-            // Scroll road based on player 1's progress
-            const scrollOffset = (this.player1.progress % 1) * 400;
-            this.roadGraphics.y = scrollOffset;
+        if (this.raceActive) {
+            const dt = Math.max(0.001, (delta || 16) / 1000);
+            this.roadScroll += dt * (2.5 + (this.player1.progress % 1));
+            this.roadCurve = Math.sin(this.player1.progress * Math.PI * 2) * 0.7;
+
+            this.renderRoad(this.roadScroll, this.roadCurve);
+
+            const playerX = this.trackCenterX + (this.player1.lane * 115);
+            this.player1.sprite.x += (playerX - this.player1.sprite.x) * 0.2;
+            this.player1.sprite.y = 472;
+
+            const lead = Phaser.Math.Clamp(this.player2.progress - this.player1.progress, -0.5, 0.5);
+            const oppY = Phaser.Math.Linear(502, 350, (lead + 0.5));
+            const oppX = this.trackCenterX + (this.player2.lane * Phaser.Math.Linear(135, 95, (oppY - 350) / 152));
+            this.player2.sprite.x += (oppX - this.player2.sprite.x) * 0.2;
+            this.player2.sprite.y += (oppY - this.player2.sprite.y) * 0.2;
         }
 
         this.updateAiRace(delta || 0);
