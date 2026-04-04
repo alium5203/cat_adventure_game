@@ -9,6 +9,8 @@ class TwoPlayerRaceScene extends Phaser.Scene {
         this.mySeat = null;
         this.raceActive = false;
         this.lastBoostAt = 0;
+        this.raceMode = null;
+        this.aiTickMs = 0;
     }
 
     create() {
@@ -104,6 +106,7 @@ class TwoPlayerRaceScene extends Phaser.Scene {
                 <div style="display:grid;gap:10px;">
                     <input id="race-name-input" maxlength="20" placeholder="Your name" value="${this.getStoredName()}" style="padding:10px 12px;border-radius:10px;border:1px solid #bfd8ea;font-size:16px;" />
                     <button id="race-create-btn" style="padding:12px 14px;border:none;border-radius:10px;background:#0f766e;color:#fff;font-size:18px;font-weight:700;cursor:pointer;">Create Code</button>
+                    <button id="race-ai-btn" style="padding:12px 14px;border:none;border-radius:10px;background:#7c3aed;color:#fff;font-size:18px;font-weight:700;cursor:pointer;">Play vs AI</button>
                 </div>
 
                 <div style="height:1px;background:#d9e7f0;margin:16px 0;"></div>
@@ -121,6 +124,7 @@ class TwoPlayerRaceScene extends Phaser.Scene {
         this.overlayRoot = root;
 
         const createBtn = root.querySelector('#race-create-btn');
+        const aiBtn = root.querySelector('#race-ai-btn');
         const joinBtn = root.querySelector('#race-join-btn');
         const codeInput = root.querySelector('#race-code-input');
         const nameInput = root.querySelector('#race-name-input');
@@ -133,6 +137,14 @@ class TwoPlayerRaceScene extends Phaser.Scene {
             });
         }
 
+        if (aiBtn) {
+            aiBtn.addEventListener('click', () => {
+                const name = (nameInput?.value || '').trim() || this.getStoredName();
+                localStorage.setItem('playerName', name);
+                this.startAiRace(name);
+            });
+        }
+
         if (joinBtn) {
             joinBtn.addEventListener('click', async () => {
                 const name = (nameInput?.value || '').trim() || this.getStoredName();
@@ -141,6 +153,28 @@ class TwoPlayerRaceScene extends Phaser.Scene {
                 await this.joinRoom(code, name);
             });
         }
+    }
+
+    startAiRace(name) {
+        this.cleanupNetworkTimers();
+        this.raceMode = 'ai';
+        this.raceCode = null;
+        this.playerId = 'local-player';
+        this.mySeat = 0;
+        this.raceActive = true;
+        this.aiTickMs = 0;
+
+        this.player1.progress = 0;
+        this.player2.progress = 0;
+        this.player1.sprite.x = this.trackStartX;
+        this.player2.sprite.x = this.trackStartX;
+
+        if (this.player1.label) this.player1.label.setText(name || 'You');
+        if (this.player2.label) this.player2.label.setText('AI Cat');
+
+        this.updateProgressHud();
+        this.statusText.setText('AI race started. Tap or press SPACE to sprint. Press R for rematch.');
+        this.unmountOverlay();
     }
 
     unmountOverlay() {
@@ -158,6 +192,7 @@ class TwoPlayerRaceScene extends Phaser.Scene {
 
     async createRoom(name) {
         try {
+            this.raceMode = 'network';
             this.setMenuMessage('Creating room...');
             const data = await this.apiRequest('/api/race/lobbies', {
                 method: 'POST',
@@ -182,6 +217,7 @@ class TwoPlayerRaceScene extends Phaser.Scene {
         }
 
         try {
+            this.raceMode = 'network';
             this.setMenuMessage('Joining room...');
             const data = await this.apiRequest(`/api/race/lobbies/${code}/join`, {
                 method: 'POST',
@@ -228,6 +264,7 @@ class TwoPlayerRaceScene extends Phaser.Scene {
     }
 
     enterRace() {
+        this.raceMode = 'network';
         this.raceActive = true;
         this.unmountOverlay();
 
@@ -261,6 +298,7 @@ class TwoPlayerRaceScene extends Phaser.Scene {
 
     applyServerState(state) {
         if (!state) return;
+        this.raceMode = 'network';
         this.mySeat = Number.isInteger(state.mySeat) ? state.mySeat : this.mySeat;
 
         const p1 = Math.max(0, Math.min(1, Number(state.progress?.[0] || 0)));
@@ -292,6 +330,10 @@ class TwoPlayerRaceScene extends Phaser.Scene {
     }
 
     async sendBoost() {
+        if (this.raceMode === 'ai') {
+            this.localBoost();
+            return;
+        }
         if (!this.raceActive || !this.raceCode || !this.playerId) return;
         const now = Date.now();
         if (now - this.lastBoostAt < 70) return;
@@ -309,6 +351,11 @@ class TwoPlayerRaceScene extends Phaser.Scene {
     }
 
     async sendRematch() {
+        if (this.raceMode === 'ai') {
+            const playerName = this.player1.label ? this.player1.label.text : 'You';
+            this.startAiRace(playerName);
+            return;
+        }
         if (!this.raceCode || !this.playerId) return;
         try {
             const data = await this.apiRequest(`/api/race/lobbies/${this.raceCode}/rematch`, {
@@ -320,6 +367,39 @@ class TwoPlayerRaceScene extends Phaser.Scene {
         } catch (error) {
             this.statusText.setText(error.message || 'Only host can rematch.');
         }
+    }
+
+    localBoost() {
+        if (!this.raceActive || this.raceMode !== 'ai') return;
+        this.player1.progress = Math.min(1, this.player1.progress + 0.022);
+        this.player1.sprite.x = Phaser.Math.Linear(this.trackStartX, this.trackFinishX, this.player1.progress);
+        this.checkAiFinish();
+        this.updateProgressHud();
+    }
+
+    updateAiRace(delta) {
+        if (!this.raceActive || this.raceMode !== 'ai') return;
+        this.aiTickMs += delta;
+        if (this.aiTickMs < 120) return;
+        this.aiTickMs = 0;
+
+        const step = 0.011 + (Math.random() * 0.016);
+        this.player2.progress = Math.min(1, this.player2.progress + step);
+        this.player2.sprite.x = Phaser.Math.Linear(this.trackStartX, this.trackFinishX, this.player2.progress);
+
+        this.checkAiFinish();
+        this.updateProgressHud();
+    }
+
+    checkAiFinish() {
+        if (this.raceMode !== 'ai' || !this.raceActive) return;
+        if (this.player1.progress < 1 && this.player2.progress < 1) return;
+
+        this.raceActive = false;
+        const winnerSeat = this.player1.progress >= 1 ? 0 : 1;
+        const winnerName = winnerSeat === 0 ? (this.player1.label ? this.player1.label.text : 'You') : 'AI Cat';
+        const youWin = winnerSeat === 0;
+        this.statusText.setText(`${winnerName} wins! ${youWin ? 'You win.' : 'You lose.'} Press R for rematch.`);
     }
 
     drawBackdrop() {
@@ -424,7 +504,7 @@ class TwoPlayerRaceScene extends Phaser.Scene {
         }).setOrigin(0.5);
     }
 
-    update() {
+    update(_time, delta) {
         if (Phaser.Input.Keyboard.JustDown(this.tapKey)) {
             this.sendBoost();
         }
@@ -432,6 +512,8 @@ class TwoPlayerRaceScene extends Phaser.Scene {
         if (Phaser.Input.Keyboard.JustDown(this.restartKey)) {
             this.sendRematch();
         }
+
+        this.updateAiRace(delta || 0);
     }
 
     updateProgressHud() {
