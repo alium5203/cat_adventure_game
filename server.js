@@ -436,7 +436,10 @@ function sendJson(res, statusCode, payload) {
     const body = JSON.stringify(payload);
     res.writeHead(statusCode, {
         'Content-Type': 'application/json; charset=utf-8',
-        'Cache-Control': 'no-store'
+        'Cache-Control': 'no-store',
+        'Access-Control-Allow-Origin': '*',
+        'Access-Control-Allow-Methods': 'GET,POST,OPTIONS',
+        'Access-Control-Allow-Headers': 'Content-Type'
     });
     res.end(body);
 }
@@ -864,6 +867,17 @@ async function parseJsonBody(req) {
 
 async function handleApi(req, res, parsedUrl) {
     const pathname = parsedUrl.pathname;
+    if (req.method === 'OPTIONS') {
+        res.writeHead(204, {
+            'Cache-Control': 'no-store',
+            'Access-Control-Allow-Origin': '*',
+            'Access-Control-Allow-Methods': 'GET,POST,OPTIONS',
+            'Access-Control-Allow-Headers': 'Content-Type'
+        });
+        res.end();
+        return true;
+    }
+
     if (pathname === '/api/race/health' && req.method === 'GET') {
         sendJson(res, 200, { ok: true, service: 'race', status: 'online' });
         return true;

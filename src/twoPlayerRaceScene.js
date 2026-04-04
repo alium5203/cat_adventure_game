@@ -1,3 +1,5 @@
+const RACE_DEPLOYED_ORIGIN = 'https://agile-brushlands-24267-9cfa491ed233.herokuapp.com';
+
 class TwoPlayerRaceScene extends Phaser.Scene {
     constructor() {
         super({ key: 'TwoPlayerRaceScene' });
@@ -57,30 +59,43 @@ class TwoPlayerRaceScene extends Phaser.Scene {
         return 'Player';
     }
 
-    async apiRequest(path, options = {}) {
-        try {
-            const response = await fetch(path, {
-                method: options.method || 'GET',
-                headers: { 'Content-Type': 'application/json' },
-                body: options.body ? JSON.stringify(options.body) : undefined
-            });
-
-            const payload = await response.json().catch(() => ({}));
-            if (!response.ok || payload.ok === false) {
-                const apiError = payload.error || '';
-                if (response.status === 404) {
-                    throw new Error('Race API not found on this host. Run npm start in cat-game and open from that server URL.');
-                }
-                throw new Error(apiError || `Race request failed (${response.status}).`);
-            }
-            return payload;
-        } catch (error) {
-            const message = String(error && error.message ? error.message : error);
-            if (message.includes('Failed to fetch') || message.includes('NetworkError')) {
-                throw new Error('Cannot reach Race API. Start the Node server with npm start in cat-game, then open that same server URL on both devices.');
-            }
-            throw error;
+    getApiCandidates(path) {
+        const candidates = [path];
+        if (typeof window !== 'undefined' && window.location.origin !== RACE_DEPLOYED_ORIGIN) {
+            candidates.push(`${RACE_DEPLOYED_ORIGIN}${path}`);
         }
+        return [...new Set(candidates)];
+    }
+
+    async apiRequest(path, options = {}) {
+        let lastError = null;
+
+        for (const url of this.getApiCandidates(path)) {
+            try {
+                const response = await fetch(url, {
+                    method: options.method || 'GET',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: options.body ? JSON.stringify(options.body) : undefined,
+                    mode: url.startsWith('http') ? 'cors' : 'same-origin'
+                });
+
+                const payload = await response.json().catch(() => ({}));
+                if (!response.ok || payload.ok === false) {
+                    const apiError = payload.error || '';
+                    lastError = new Error(apiError || `Race request failed (${response.status}).`);
+                    continue;
+                }
+                return payload;
+            } catch (error) {
+                lastError = error;
+            }
+        }
+
+        const message = String(lastError && lastError.message ? lastError.message : lastError);
+        if (message.includes('Failed to fetch') || message.includes('NetworkError') || message.includes('Load failed')) {
+            throw new Error(`Cannot reach Race API. Open the live site at ${RACE_DEPLOYED_ORIGIN} or run npm start locally.`);
+        }
+        throw lastError || new Error('Race API request failed.');
     }
 
     mountMenuOverlay() {
@@ -116,6 +131,10 @@ class TwoPlayerRaceScene extends Phaser.Scene {
                     <button id="race-join-btn" style="padding:12px 16px;border:none;border-radius:10px;background:#2563eb;color:#fff;font-size:17px;font-weight:700;cursor:pointer;">Join</button>
                 </div>
 
+                <div style="display:flex;gap:10px;justify-content:flex-end;margin-top:12px;">
+                    <button id="race-reset-btn" style="padding:10px 14px;border:none;border-radius:10px;background:#e2e8f0;color:#1e293b;font-size:14px;font-weight:700;cursor:pointer;">Clear</button>
+                </div>
+
                 <p id="race-menu-msg" style="margin:12px 0 0;color:#204860;font-size:14px;min-height:20px;"></p>
             </div>
         `;
@@ -126,6 +145,7 @@ class TwoPlayerRaceScene extends Phaser.Scene {
         const createBtn = root.querySelector('#race-create-btn');
         const aiBtn = root.querySelector('#race-ai-btn');
         const joinBtn = root.querySelector('#race-join-btn');
+        const resetBtn = root.querySelector('#race-reset-btn');
         const codeInput = root.querySelector('#race-code-input');
         const nameInput = root.querySelector('#race-name-input');
 
@@ -152,6 +172,31 @@ class TwoPlayerRaceScene extends Phaser.Scene {
                 localStorage.setItem('playerName', name);
                 await this.joinRoom(code, name);
             });
+        }
+
+        if (resetBtn) {
+            resetBtn.addEventListener('click', () => {
+                if (codeInput) codeInput.value = '';
+                this.resetRaceSession();
+                this.setMenuMessage('Cleared old room info. You can create a new code or join another one.');
+            });
+        }
+    }
+
+    resetRaceSession() {
+        this.cleanupNetworkTimers();
+        this.raceCode = null;
+        this.playerId = null;
+        this.mySeat = null;
+        this.raceActive = false;
+        this.raceMode = null;
+        this.player1.progress = 0;
+        this.player2.progress = 0;
+        if (this.player1.sprite) this.player1.sprite.x = this.trackStartX;
+        if (this.player2.sprite) this.player2.sprite.x = this.trackStartX;
+        this.updateProgressHud();
+        if (this.statusText) {
+            this.statusText.setText('Waiting for room setup...');
         }
     }
 
@@ -242,8 +287,30 @@ class TwoPlayerRaceScene extends Phaser.Scene {
                 <h2 style="margin:0 0 10px;color:#113c5a;font-size:30px;">Race Lobby</h2>
                 <p style="margin:0 0 10px;color:#205a77;font-size:18px;">${message}</p>
                 <p style="margin:0;color:#37617a;font-size:14px;">Keep this screen open. The race will sync automatically.</p>
+                <div style="display:flex;gap:10px;justify-content:center;margin-top:16px;">
+                    <button id="race-new-code-btn" style="padding:10px 14px;border:none;border-radius:10px;background:#1d4ed8;color:#fff;font-size:14px;font-weight:700;cursor:pointer;">New Code</button>
+                    <button id="race-back-btn" style="padding:10px 14px;border:none;border-radius:10px;background:#e2e8f0;color:#1e293b;font-size:14px;font-weight:700;cursor:pointer;">Back</button>
+                </div>
             </div>
         `;
+
+        const newCodeBtn = this.overlayRoot.querySelector('#race-new-code-btn');
+        const backBtn = this.overlayRoot.querySelector('#race-back-btn');
+
+        if (newCodeBtn) {
+            newCodeBtn.addEventListener('click', async () => {
+                const name = this.getStoredName();
+                this.mountMenuOverlay();
+                await this.createRoom(name);
+            });
+        }
+
+        if (backBtn) {
+            backBtn.addEventListener('click', () => {
+                this.resetRaceSession();
+                this.mountMenuOverlay();
+            });
+        }
     }
 
     startLobbyPolling() {
@@ -407,12 +474,47 @@ class TwoPlayerRaceScene extends Phaser.Scene {
         sky.fillGradientStyle(0x89d8ff, 0x89d8ff, 0xd7f2ff, 0xd7f2ff, 1);
         sky.fillRect(0, 0, 1200, 600);
 
+        const grandstands = this.add.graphics();
+        grandstands.fillStyle(0xcbd5e1, 1);
+        grandstands.fillRoundedRect(90, 118, 1020, 54, 18);
+        grandstands.fillRoundedRect(90, 438, 1020, 54, 18);
+        grandstands.fillStyle(0x94a3b8, 1);
+        grandstands.fillRoundedRect(120, 132, 960, 28, 14);
+        grandstands.fillRoundedRect(120, 452, 960, 28, 14);
+
+        for (let index = 0; index < 18; index++) {
+            const x = 132 + (index * 53);
+            const topColor = index % 3 === 0 ? 0xff6b6b : index % 3 === 1 ? 0xffd166 : 0x4ecdc4;
+            const bottomColor = index % 2 === 0 ? 0x577590 : 0x43aa8b;
+            grandstands.fillStyle(topColor, 0.95);
+            grandstands.fillRect(x, 136, 26, 20);
+            grandstands.fillStyle(bottomColor, 0.95);
+            grandstands.fillRect(x, 456, 26, 20);
+        }
+
         const hills = this.add.graphics();
         hills.fillStyle(0x81c784, 1);
         hills.fillCircle(160, 600, 170);
         hills.fillCircle(450, 620, 220);
         hills.fillCircle(840, 610, 180);
         hills.fillCircle(1120, 630, 200);
+
+        const infield = this.add.graphics();
+        infield.fillStyle(0x76c893, 1);
+        infield.fillRoundedRect(170, 196, 860, 228, 40);
+        infield.fillStyle(0x52b788, 1);
+        infield.fillRoundedRect(216, 238, 768, 144, 30);
+        infield.fillStyle(0xfef3c7, 1);
+        infield.fillCircle(600, 310, 44);
+        infield.fillStyle(0xf59e0b, 1);
+        infield.fillCircle(600, 310, 28);
+
+        const cones = this.add.graphics();
+        [300, 460, 740, 900].forEach(x => {
+            cones.fillStyle(0xf97316, 1);
+            cones.fillTriangle(x, 208, x - 10, 232, x + 10, 232);
+            cones.fillTriangle(x, 388, x - 10, 412, x + 10, 412);
+        });
 
         this.add.text(600, 62, 'Two People Race', {
             fontSize: '42px',
@@ -431,9 +533,25 @@ class TwoPlayerRaceScene extends Phaser.Scene {
     drawTrack() {
         const laneGraphics = this.add.graphics();
 
+        laneGraphics.fillStyle(0x334155, 1);
+        laneGraphics.fillRoundedRect(this.trackStartX - 58, this.topLaneY - 48, this.trackFinishX - this.trackStartX + 116, 256, 44);
+
+        laneGraphics.fillStyle(0xef4444, 1);
+        laneGraphics.fillRoundedRect(this.trackStartX - 52, this.topLaneY - 42, this.trackFinishX - this.trackStartX + 104, 16, 12);
+        laneGraphics.fillRoundedRect(this.trackStartX - 52, this.bottomLaneY + 26, this.trackFinishX - this.trackStartX + 104, 16, 12);
+
+        laneGraphics.fillStyle(0xffffff, 1);
+        for (let x = this.trackStartX - 48; x < this.trackFinishX + 52; x += 24) {
+            laneGraphics.fillRect(x, this.topLaneY - 39, 12, 10);
+            laneGraphics.fillRect(x, this.bottomLaneY + 29, 12, 10);
+        }
+
         laneGraphics.fillStyle(0x4f5d75, 1);
         laneGraphics.fillRoundedRect(this.trackStartX - 38, this.topLaneY - 28, this.trackFinishX - this.trackStartX + 76, 56, 18);
         laneGraphics.fillRoundedRect(this.trackStartX - 38, this.bottomLaneY - 28, this.trackFinishX - this.trackStartX + 76, 56, 18);
+
+        laneGraphics.fillStyle(0x64748b, 1);
+        laneGraphics.fillRect(this.trackStartX - 28, 308, this.trackFinishX - this.trackStartX + 56, 6);
 
         laneGraphics.fillStyle(0xf4a261, 1);
         laneGraphics.fillRect(this.trackStartX - 6, this.topLaneY - 31, 12, 62);
@@ -443,11 +561,47 @@ class TwoPlayerRaceScene extends Phaser.Scene {
         laneGraphics.fillRect(this.trackFinishX - 6, this.topLaneY - 31, 12, 62);
         laneGraphics.fillRect(this.trackFinishX - 6, this.bottomLaneY - 31, 12, 62);
 
+        laneGraphics.fillStyle(0xffffff, 1);
+        for (let y = this.topLaneY - 31; y <= this.topLaneY + 25; y += 12) {
+            laneGraphics.fillRect(this.trackFinishX - 20, y, 14, 6);
+            laneGraphics.fillRect(this.trackFinishX + 6, y + 6, 14, 6);
+        }
+        for (let y = this.bottomLaneY - 31; y <= this.bottomLaneY + 25; y += 12) {
+            laneGraphics.fillRect(this.trackFinishX - 20, y, 14, 6);
+            laneGraphics.fillRect(this.trackFinishX + 6, y + 6, 14, 6);
+        }
+
         for (let i = this.trackStartX + 30; i < this.trackFinishX - 10; i += 35) {
             laneGraphics.fillStyle(0xffffff, 0.72);
             laneGraphics.fillRect(i, this.topLaneY - 2, 16, 4);
             laneGraphics.fillRect(i, this.bottomLaneY - 2, 16, 4);
         }
+
+        const gantry = this.add.graphics();
+        gantry.fillStyle(0x1e293b, 1);
+        gantry.fillRect(this.trackFinishX - 18, this.topLaneY - 82, 10, 48);
+        gantry.fillRect(this.trackFinishX + 22, this.topLaneY - 82, 10, 48);
+        gantry.fillRoundedRect(this.trackFinishX - 32, this.topLaneY - 110, 76, 28, 8);
+        this.add.text(this.trackFinishX + 6, this.topLaneY - 96, 'FINISH', {
+            fontSize: '14px',
+            fontFamily: 'Nunito, Arial, sans-serif',
+            color: '#ffffff',
+            fontStyle: 'bold'
+        }).setOrigin(0.5);
+
+        this.add.text(this.trackStartX + 8, this.topLaneY - 52, 'START', {
+            fontSize: '14px',
+            fontFamily: 'Nunito, Arial, sans-serif',
+            color: '#fff7ed',
+            fontStyle: 'bold'
+        }).setOrigin(0.5);
+
+        this.add.text(this.trackStartX + 8, this.bottomLaneY - 52, 'START', {
+            fontSize: '14px',
+            fontFamily: 'Nunito, Arial, sans-serif',
+            color: '#fff7ed',
+            fontStyle: 'bold'
+        }).setOrigin(0.5);
 
         this.player1.label = this.add.text(36, this.topLaneY - 12, 'Player 1', {
             fontSize: '28px',
