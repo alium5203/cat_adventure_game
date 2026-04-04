@@ -115,9 +115,7 @@ class TwoPlayerRaceScene extends Phaser.Scene {
         root.id = 'race-online-overlay';
         root.style.display = 'flex';
         root.style.alignItems = 'center';
-        const p2Clamped = Math.max(0, Math.min(this.lapsToWin, Number(state.progress?.[1] || 0)));
         root.style.justifyContent = 'center';
-        this.player2.progress = p2Clamped;
         root.style.background = 'rgba(7, 24, 45, 0.28)';
 
         root.innerHTML = `
@@ -375,13 +373,13 @@ class TwoPlayerRaceScene extends Phaser.Scene {
         this.raceMode = 'network';
         this.mySeat = Number.isInteger(state.mySeat) ? state.mySeat : this.mySeat;
 
-        const p1 = Math.max(0, Math.min(1, Number(state.progress?.[0] || 0)));
-        const p2 = Math.max(0, Math.min(this.lapsToWin, Number(state.progress?.[1] || 0)));
         this.lapsToWin = Math.max(1, Number(state.lapsToWin || this.lapsToWin || RACE_LAPS_TO_WIN_DEFAULT));
+        
         const p1Clamped = Math.max(0, Math.min(this.lapsToWin, Number(state.progress?.[0] || 0)));
-        this.player1.progress = p1;
+        const p2Clamped = Math.max(0, Math.min(this.lapsToWin, Number(state.progress?.[1] || 0)));
+        
         this.player1.progress = p1Clamped;
-        this.player2.progress = p2;
+        this.player2.progress = p2Clamped;
 
         this.placeRacer(this.player1, 0);
         this.placeRacer(this.player2, 1);
