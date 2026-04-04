@@ -478,19 +478,17 @@ class TwoPlayerRaceScene extends Phaser.Scene {
             const nextLeftX = this.trackCenterX - nextRoadWidth / 2;
             const nextRightX = this.trackCenterX + nextRoadWidth / 2;
             
-            // Road surface
+            // Road surface drawn as two triangles for Phaser 3.55 compatibility.
             graphics.fillStyle(i % 2 === 0 ? 0x444444 : 0x555555, 1);
-            graphics.fillPolygon([leftX, y, rightX, y, nextRightX, nextY, nextLeftX, nextY]);
-            
+            graphics.fillTriangle(leftX, y, rightX, y, nextRightX, nextY);
+            graphics.fillTriangle(leftX, y, nextRightX, nextY, nextLeftX, nextY);
+
             // Center yellow line
             if (i % 4 === 0) {
+                const centerTop = Math.min(y, nextY);
+                const centerHeight = Math.max(1, Math.abs(nextY - y));
                 graphics.fillStyle(0xffff00, 1);
-                graphics.fillPolygon([
-                    this.trackCenterX - 15, y,
-                    this.trackCenterX + 15, y,
-                    this.trackCenterX + 15, nextY,
-                    this.trackCenterX - 15, nextY
-                ]);
+                graphics.fillRect(this.trackCenterX - 4, centerTop, 8, centerHeight);
             }
         }
 
