@@ -19,19 +19,27 @@ class TwoPlayerRaceScene extends Phaser.Scene {
 
     create() {
         this.physics.world.gravity.y = 0;
-        this.cameras.main.setBackgroundColor('#87ceeb');
+        this.cameras.main.setBackgroundColor('#d8f3ff');
 
-        // Mario Kart-style perspective track
+        this.trackStartX = 110;
+        this.trackFinishX = 1090;
+        this.topLaneY = 230;
+        this.bottomLaneY = 390;
         this.trackCenterX = 600;
-        this.player1 = { progress: 0, label: null, itemCount: 0, sprite: null, lane: -1 };
-        this.player2 = { progress: 0, label: null, itemCount: 0, sprite: null, lane: 1 };
-        this.roadScroll = 0;
-        this.roadCurve = 0;
+        this.trackCenterY = 310;
+        this.trackOuterRx = 430;
+        this.trackOuterRy = 140;
+        this.trackInnerRx = 372;
+        this.trackInnerRy = 94;
 
-        this.drawPerspectiveRoad();
-        this.createPlayerKarts();
-        this.setupRaceHud();
+        this.player1 = { progress: 0, sprite: null, label: null };
+        this.player2 = { progress: 0, sprite: null, label: null };
+
+        this.drawBackdrop();
+        this.drawTrack();
+        this.createRacers();
         this.bindControls();
+        this.setupHud();
         this.mountMenuOverlay();
 
         this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => {
@@ -90,6 +98,11 @@ class TwoPlayerRaceScene extends Phaser.Scene {
                 lastError = error;
             }
         }
+
+        const message = String(lastError && lastError.message ? lastError.message : lastError);
+        if (message.includes('Failed to fetch') || message.includes('NetworkError') || message.includes('Load failed')) {
+            throw new Error(`Cannot reach Race API. Open the live site at ${RACE_DEPLOYED_ORIGIN} or run npm start locally.`);
+        }
         throw lastError || new Error('Race API request failed.');
     }
 
@@ -107,12 +120,12 @@ class TwoPlayerRaceScene extends Phaser.Scene {
 
         root.innerHTML = `
             <div style="width:min(520px,92vw);background:rgba(255,255,255,0.94);border-radius:20px;padding:20px 22px;box-shadow:0 20px 45px rgba(0,0,0,0.22);font-family:Nunito,Arial,sans-serif;">
-                <h2 style="margin:0 0 8px;color:#113c5a;font-size:30px;">🏎️ Mario Kart: Race Forward!</h2>
-                <p style="margin:0 0 14px;color:#1f4d66;">Race in 3D perspective! Use SPACE to boost, A/D to switch lanes.</p>
+                <h2 style="margin:0 0 8px;color:#113c5a;font-size:30px;">Device-to-Device Race</h2>
+                <p style="margin:0 0 14px;color:#1f4d66;">Create a room code on one device, then join from another device.</p>
 
                 <div style="display:grid;gap:10px;">
                     <input id="race-name-input" maxlength="20" placeholder="Your name" value="${this.getStoredName()}" style="padding:10px 12px;border-radius:10px;border:1px solid #bfd8ea;font-size:16px;" />
-                    <button id="race-create-btn" style="padding:12px 14px;border:none;border-radius:10px;background:#0f766e;color:#fff;font-size:18px;font-weight:700;cursor:pointer;">Create Room</button>
+                    <button id="race-create-btn" style="padding:12px 14px;border:none;border-radius:10px;background:#0f766e;color:#fff;font-size:18px;font-weight:700;cursor:pointer;">Create Code</button>
                     <button id="race-ai-btn" style="padding:12px 14px;border:none;border-radius:10px;background:#7c3aed;color:#fff;font-size:18px;font-weight:700;cursor:pointer;">Play vs AI</button>
                 </div>
 
@@ -170,7 +183,7 @@ class TwoPlayerRaceScene extends Phaser.Scene {
             resetBtn.addEventListener('click', () => {
                 if (codeInput) codeInput.value = '';
                 this.resetRaceSession();
-                this.setMenuMessage('Cleared. Create new or join another room.');
+                this.setMenuMessage('Cleared old room info. You can create a new code or join another one.');
             });
         }
     }
@@ -184,8 +197,11 @@ class TwoPlayerRaceScene extends Phaser.Scene {
         this.raceMode = null;
         this.player1.progress = 0;
         this.player2.progress = 0;
+        this.placeRacer(this.player1, 0);
+        this.placeRacer(this.player2, 1);
+        this.updateProgressHud();
         if (this.statusText) {
-            this.statusText.setText('Waiting for race...');
+            this.statusText.setText('Waiting for room setup...');
         }
     }
 
@@ -200,13 +216,14 @@ class TwoPlayerRaceScene extends Phaser.Scene {
 
         this.player1.progress = 0;
         this.player2.progress = 0;
-        this.player1.lane = -1;
-        this.player2.lane = 1;
-        this.player1.label = name || 'You';
-        this.player2.label = 'AI Cat';
+        this.placeRacer(this.player1, 0);
+        this.placeRacer(this.player2, 1);
 
-        this.updateRaceHud();
-        this.statusText.setText(`🏁 3-Lap Race! Press SPACE to BOOST!`);
+        if (this.player1.label) this.player1.label.setText(name || 'You');
+        if (this.player2.label) this.player2.label.setText('AI Cat');
+
+        this.updateProgressHud();
+        this.statusText.setText(`AI kart race started. First to ${this.lapsToWin} laps wins. Tap or press SPACE to boost.`);
         this.unmountOverlay();
     }
 
@@ -236,7 +253,7 @@ class TwoPlayerRaceScene extends Phaser.Scene {
             this.playerId = data.playerId;
             this.mySeat = 0;
 
-            this.showLobbyOverlay(`Room code: ${this.raceCode}`);
+            this.showLobbyOverlay(`Room code: ${this.raceCode}. Share this code and wait for player 2.`);
             this.startLobbyPolling();
         } catch (error) {
             this.setMenuMessage(error.message || 'Unable to create room.');
@@ -261,7 +278,7 @@ class TwoPlayerRaceScene extends Phaser.Scene {
             this.playerId = data.playerId;
             this.mySeat = 1;
 
-            this.showLobbyOverlay(`Joined room ${this.raceCode}`);
+            this.showLobbyOverlay(`Joined room ${this.raceCode}. Race starting...`);
             this.enterRace();
         } catch (error) {
             this.setMenuMessage(error.message || 'Unable to join room.');
@@ -274,7 +291,7 @@ class TwoPlayerRaceScene extends Phaser.Scene {
             <div style="width:min(560px,92vw);background:rgba(255,255,255,0.95);border-radius:20px;padding:22px 24px;box-shadow:0 20px 45px rgba(0,0,0,0.22);font-family:Nunito,Arial,sans-serif;text-align:center;">
                 <h2 style="margin:0 0 10px;color:#113c5a;font-size:30px;">Race Lobby</h2>
                 <p style="margin:0 0 10px;color:#205a77;font-size:18px;">${message}</p>
-                <p style="margin:0;color:#37617a;font-size:14px;">Keep open. Race starts when both join.</p>
+                <p style="margin:0;color:#37617a;font-size:14px;">Keep this screen open. The race will sync automatically.</p>
                 <div style="display:flex;gap:10px;justify-content:center;margin-top:16px;">
                     <button id="race-new-code-btn" style="padding:10px 14px;border:none;border-radius:10px;background:#1d4ed8;color:#fff;font-size:14px;font-weight:700;cursor:pointer;">New Code</button>
                     <button id="race-back-btn" style="padding:10px 14px;border:none;border-radius:10px;background:#e2e8f0;color:#1e293b;font-size:14px;font-weight:700;cursor:pointer;">Back</button>
@@ -328,11 +345,15 @@ class TwoPlayerRaceScene extends Phaser.Scene {
             this.lobbyPollTimer = null;
         }
 
-        this.statePollTimer = setInterval(() => {
-            this.refreshRaceState();
+        if (this.statePollTimer) {
+            clearInterval(this.statePollTimer);
+        }
+
+        this.statePollTimer = setInterval(async () => {
+            await this.refreshRaceState();
         }, 120);
 
-        this.statusText.setText(`🏁 Race Started! Press SPACE to BOOST!`);
+        this.refreshRaceState();
     }
 
     async refreshRaceState() {
@@ -360,22 +381,25 @@ class TwoPlayerRaceScene extends Phaser.Scene {
         this.player1.progress = p1Clamped;
         this.player2.progress = p2Clamped;
 
+        this.placeRacer(this.player1, 0);
+        this.placeRacer(this.player2, 1);
+
         const topName = state.players?.find(player => player.seat === 0)?.name || 'Player 1';
         const bottomName = state.players?.find(player => player.seat === 1)?.name || 'Player 2';
 
-        this.player1.label = topName;
-        this.player2.label = bottomName;
+        if (this.player1.label) this.player1.label.setText(topName);
+        if (this.player2.label) this.player2.label.setText(bottomName);
 
-        this.updateRaceHud();
+        this.updateProgressHud();
 
         if (typeof state.winner === 'number') {
             const winnerName = state.winner === 0 ? topName : bottomName;
             const youWin = this.mySeat === state.winner;
-            this.statusText.setText(`${winnerName} WINS! ${youWin ? '🏆 YOU WIN! 🏆' : 'You lose. Press R for rematch.'}`);
+            this.statusText.setText(`${winnerName} wins! ${youWin ? 'You win.' : 'You lose.'} Host can press R for rematch.`);
             this.raceActive = false;
         } else if (state.status === 'in-progress') {
             const myLabel = this.mySeat === 0 ? topName : bottomName;
-            this.statusText.setText(`🏁 Race to ${this.lapsToWin} laps | Your kart: ${myLabel}`);
+            this.statusText.setText(`Room ${this.raceCode} | Kart: ${myLabel}. Race to ${this.lapsToWin} laps.`);
             this.raceActive = true;
         }
     }
@@ -403,7 +427,7 @@ class TwoPlayerRaceScene extends Phaser.Scene {
 
     async sendRematch() {
         if (this.raceMode === 'ai') {
-            const playerName = this.player1.label || 'You';
+            const playerName = this.player1.label ? this.player1.label.text : 'You';
             this.startAiRace(playerName);
             return;
         }
@@ -422,10 +446,10 @@ class TwoPlayerRaceScene extends Phaser.Scene {
 
     localBoost() {
         if (!this.raceActive || this.raceMode !== 'ai') return;
-        this.player1.progress = Math.min(this.lapsToWin, this.player1.progress + 0.08);
-        this.createBoostEffect();
+        this.player1.progress = Math.min(this.lapsToWin, this.player1.progress + 0.05);
+        this.placeRacer(this.player1, 0);
         this.checkAiFinish();
-        this.updateRaceHud();
+        this.updateProgressHud();
     }
 
     updateAiRace(delta) {
@@ -436,8 +460,10 @@ class TwoPlayerRaceScene extends Phaser.Scene {
 
         const step = 0.011 + (Math.random() * 0.016);
         this.player2.progress = Math.min(this.lapsToWin, this.player2.progress + step);
+        this.placeRacer(this.player2, 1);
+
         this.checkAiFinish();
-        this.updateRaceHud();
+        this.updateProgressHud();
     }
 
     checkAiFinish() {
@@ -446,158 +472,206 @@ class TwoPlayerRaceScene extends Phaser.Scene {
 
         this.raceActive = false;
         const winnerSeat = this.player1.progress >= this.lapsToWin ? 0 : 1;
-        const winnerName = winnerSeat === 0 ? (this.player1.label || 'You') : 'AI Cat';
+        const winnerName = winnerSeat === 0 ? (this.player1.label ? this.player1.label.text : 'You') : 'AI Cat';
         const youWin = winnerSeat === 0;
-        const message = youWin ? `${winnerName} WINS! 🏆 YOU WIN! 🏆 Press R for rematch.` : `${winnerName} wins. You lose. Press R for rematch.`;
-        this.statusText.setText(message);
+        this.statusText.setText(`${winnerName} wins! ${youWin ? 'You win.' : 'You lose.'} Press R for rematch.`);
     }
 
-    drawPerspectiveRoad() {
-        this.bgGraphics = this.add.graphics();
-        this.roadGraphics = this.add.graphics();
-        this.fxGraphics = this.add.graphics();
-
-        // Static sky/ground base.
-        this.bgGraphics.fillStyle(0x85d6ff, 1);
-        this.bgGraphics.fillRect(0, 0, 1200, 290);
-        this.bgGraphics.fillStyle(0x2f9a2f, 1);
-        this.bgGraphics.fillRect(0, 290, 1200, 310);
-
-        this.renderRoad(0, 0);
+    getLanePoint(progress, laneIndex) {
+        const laneShift = laneIndex === 0 ? -16 : 16;
+        const rx = Phaser.Math.Clamp(this.trackOuterRx + laneShift, 120, 560);
+        const ry = Phaser.Math.Clamp(this.trackOuterRy + laneShift * 0.6, 70, 240);
+        const normalized = Phaser.Math.Wrap(progress, 0, 1);
+        const angle = -Math.PI / 2 + (normalized * Math.PI * 2);
+        const x = this.trackCenterX + (Math.cos(angle) * rx);
+        const y = this.trackCenterY + (Math.sin(angle) * ry);
+        const tangentX = -Math.sin(angle) * rx;
+        const tangentY = Math.cos(angle) * ry;
+        const rotation = Math.atan2(tangentY, tangentX);
+        return { x, y, rotation };
     }
 
-    createPlayerKarts() {
-        const makeKart = (x, y, color, textColor, tag) => {
-            const body = this.add.rectangle(x, y, 56, 30, color).setStrokeStyle(3, 0x1f2937, 1);
-            const spoiler = this.add.rectangle(x, y + 16, 42, 6, 0x111827);
-            const label = this.add.text(x, y, tag, {
-                fontSize: '12px',
-                fontFamily: 'Nunito, Arial, sans-serif',
-                color: textColor,
-                fontStyle: 'bold'
-            }).setOrigin(0.5);
-            return this.add.container(0, 0, [body, spoiler, label]);
-        };
-
-        this.player1.sprite = makeKart(520, 468, 0xffc107, '#1f2937', 'P1');
-        this.player2.sprite = makeKart(680, 430, 0x4f83cc, '#ffffff', 'P2');
+    fillEllipseCompat(graphics, x, y, width, height, color, alpha = 1) {
+        graphics.fillStyle(color, alpha);
+        if (typeof graphics.fillEllipse === 'function') {
+            graphics.fillEllipse(x, y, width, height);
+            return;
+        }
+        if (typeof graphics.fillEllipseShape === 'function') {
+            graphics.fillEllipseShape(new Phaser.Geom.Ellipse(x, y, width, height));
+            return;
+        }
+        graphics.fillCircle(x, y, Math.max(8, Math.floor(Math.min(width, height) / 2)));
     }
 
-    renderRoad(scroll, curve) {
-        if (!this.roadGraphics || !this.fxGraphics) return;
-
-        this.roadGraphics.clear();
-        this.fxGraphics.clear();
-
-        const segCount = 42;
-        const horizonY = 118;
-        const bottomY = 560;
-        const band = (bottomY - horizonY) / segCount;
-
-        // Distant hills for depth.
-        this.fxGraphics.fillStyle(0x62b15b, 1);
-        this.fxGraphics.fillCircle(120, 290, 120);
-        this.fxGraphics.fillCircle(360, 292, 155);
-        this.fxGraphics.fillCircle(760, 298, 180);
-        this.fxGraphics.fillCircle(1040, 296, 145);
-
-        for (let i = 0; i < segCount; i++) {
-            const t0 = i / segCount;
-            const t1 = (i + 1) / segCount;
-            const y0 = bottomY - (i * band);
-            const y1 = bottomY - ((i + 1) * band);
-
-            const w0 = Phaser.Math.Linear(520, 130, t0);
-            const w1 = Phaser.Math.Linear(520, 130, t1);
-
-            const bend0 = curve * (1 - t0) * (1 - t0) * 260;
-            const bend1 = curve * (1 - t1) * (1 - t1) * 260;
-
-            const cx0 = this.trackCenterX + bend0;
-            const cx1 = this.trackCenterX + bend1;
-
-            // Main asphalt.
-            this.roadGraphics.fillStyle(i % 2 === 0 ? 0x3b3b3b : 0x454545, 1);
-            this.roadGraphics.fillTriangle(cx0 - w0, y0, cx0 + w0, y0, cx1 + w1, y1);
-            this.roadGraphics.fillTriangle(cx0 - w0, y0, cx1 + w1, y1, cx1 - w1, y1);
-
-            // Curbs.
-            this.roadGraphics.fillStyle(i % 2 === 0 ? 0xfff4f4 : 0xe11d48, 1);
-            this.roadGraphics.fillRect(cx0 - w0 - 16, y1, 16, Math.max(1, y0 - y1));
-            this.roadGraphics.fillRect(cx0 + w0, y1, 16, Math.max(1, y0 - y1));
-
-            // Lane dashes.
-            if (((i + Math.floor(scroll * 20)) % 5) === 0) {
-                const dashW = Phaser.Math.Linear(16, 5, t0);
-                const dashH = Math.max(2, Math.floor((y0 - y1) * 0.7));
-                this.roadGraphics.fillStyle(0xffe66d, 1);
-                this.roadGraphics.fillRect(cx0 - (dashW / 2), y1 + 1, dashW, dashH);
-            }
-
-            // Roadside posts for speed sensation.
-            if (i % 4 === 0) {
-                const postH = Phaser.Math.Linear(24, 8, t0);
-                this.fxGraphics.fillStyle(0x166534, 1);
-                this.fxGraphics.fillRect(cx0 - w0 - 48, y1 - postH, 8, postH);
-                this.fxGraphics.fillRect(cx0 + w0 + 40, y1 - postH, 8, postH);
-            }
+    strokeEllipseCompat(graphics, x, y, width, height, lineWidth, color, alpha = 1) {
+        graphics.lineStyle(lineWidth, color, alpha);
+        if (typeof graphics.strokeEllipse === 'function') {
+            graphics.strokeEllipse(x, y, width, height);
+            return;
+        }
+        if (typeof graphics.strokeEllipseShape === 'function') {
+            graphics.strokeEllipseShape(new Phaser.Geom.Ellipse(x, y, width, height));
+            return;
         }
     }
 
-    createBoostEffect() {
-        const flash = this.add.rectangle(600, 300, 1200, 600, 0xffff00);
-        flash.setAlpha(0.15);
-        this.tweens.add({
-            targets: flash,
-            alpha: 0,
-            duration: 150,
-            onComplete: () => flash.destroy()
+    placeRacer(player, laneIndex) {
+        if (!player || !player.sprite) return;
+        const point = this.getLanePoint(player.progress, laneIndex);
+        player.sprite.x = point.x;
+        player.sprite.y = point.y;
+        player.sprite.rotation = point.rotation;
+    }
+
+    drawBackdrop() {
+        const sky = this.add.graphics();
+        sky.fillGradientStyle(0x89d8ff, 0x89d8ff, 0xd7f2ff, 0xd7f2ff, 1);
+        sky.fillRect(0, 0, 1200, 600);
+
+        const grandstands = this.add.graphics();
+        grandstands.fillStyle(0xcbd5e1, 1);
+        grandstands.fillRoundedRect(90, 118, 1020, 54, 18);
+        grandstands.fillRoundedRect(90, 438, 1020, 54, 18);
+        grandstands.fillStyle(0x94a3b8, 1);
+        grandstands.fillRoundedRect(120, 132, 960, 28, 14);
+        grandstands.fillRoundedRect(120, 452, 960, 28, 14);
+
+        for (let index = 0; index < 18; index++) {
+            const x = 132 + (index * 53);
+            const topColor = index % 3 === 0 ? 0xff6b6b : index % 3 === 1 ? 0xffd166 : 0x4ecdc4;
+            const bottomColor = index % 2 === 0 ? 0x577590 : 0x43aa8b;
+            grandstands.fillStyle(topColor, 0.95);
+            grandstands.fillRect(x, 136, 26, 20);
+            grandstands.fillStyle(bottomColor, 0.95);
+            grandstands.fillRect(x, 456, 26, 20);
+        }
+
+        const hills = this.add.graphics();
+        hills.fillStyle(0x81c784, 1);
+        hills.fillCircle(160, 600, 170);
+        hills.fillCircle(450, 620, 220);
+        hills.fillCircle(840, 610, 180);
+        hills.fillCircle(1120, 630, 200);
+
+        const infield = this.add.graphics();
+        infield.fillStyle(0x76c893, 1);
+        infield.fillRoundedRect(170, 196, 860, 228, 40);
+        infield.fillStyle(0x52b788, 1);
+        infield.fillRoundedRect(216, 238, 768, 144, 30);
+        infield.fillStyle(0xfef3c7, 1);
+        infield.fillCircle(600, 310, 44);
+        infield.fillStyle(0xf59e0b, 1);
+        infield.fillCircle(600, 310, 28);
+
+        const cones = this.add.graphics();
+        [300, 460, 740, 900].forEach(x => {
+            cones.fillStyle(0xf97316, 1);
+            cones.fillTriangle(x, 208, x - 10, 232, x + 10, 232);
+            cones.fillTriangle(x, 388, x - 10, 412, x + 10, 412);
+        });
+
+        this.add.text(600, 62, 'Two People Race', {
+            fontSize: '42px',
+            fontFamily: 'Nunito, Arial, sans-serif',
+            color: '#114b5f',
+            fontStyle: 'bold'
+        }).setOrigin(0.5);
+
+        this.add.text(600, 103, 'Create a room code and join from another device', {
+            fontSize: '20px',
+            fontFamily: 'Nunito, Arial, sans-serif',
+            color: '#1d3557'
+        }).setOrigin(0.5);
+    }
+
+    drawTrack() {
+        const laneGraphics = this.add.graphics();
+
+        this.fillEllipseCompat(laneGraphics, this.trackCenterX, this.trackCenterY, this.trackOuterRx * 2 + 76, this.trackOuterRy * 2 + 76, 0x334155, 1);
+        this.fillEllipseCompat(laneGraphics, this.trackCenterX, this.trackCenterY, this.trackOuterRx * 2, this.trackOuterRy * 2, 0x4f5d75, 1);
+        this.fillEllipseCompat(laneGraphics, this.trackCenterX, this.trackCenterY, this.trackInnerRx * 2, this.trackInnerRy * 2, 0x76c893, 1);
+
+        this.strokeEllipseCompat(laneGraphics, this.trackCenterX, this.trackCenterY, (this.trackOuterRx + this.trackInnerRx), (this.trackOuterRy + this.trackInnerRy), 6, 0xffffff, 0.28);
+
+        for (let i = 0; i < 48; i++) {
+            const angle = (i / 48) * Math.PI * 2;
+            const rx = this.trackOuterRx + 33;
+            const ry = this.trackOuterRy + 33;
+            const x = this.trackCenterX + Math.cos(angle) * rx;
+            const y = this.trackCenterY + Math.sin(angle) * ry;
+            laneGraphics.fillStyle(i % 2 === 0 ? 0xef4444 : 0xffffff, 1);
+            laneGraphics.fillCircle(x, y, 8);
+        }
+
+        for (let i = 0; i < 28; i++) {
+            const angle = (i / 28) * Math.PI * 2;
+            const rx = (this.trackOuterRx + this.trackInnerRx) / 2;
+            const ry = (this.trackOuterRy + this.trackInnerRy) / 2;
+            const x = this.trackCenterX + Math.cos(angle) * rx;
+            const y = this.trackCenterY + Math.sin(angle) * ry;
+            laneGraphics.fillStyle(0xffffff, 0.64);
+            laneGraphics.fillCircle(x, y, 5);
+        }
+
+        const gantry = this.add.graphics();
+        gantry.fillStyle(0x1e293b, 1);
+        gantry.fillRect(this.trackCenterX - 40, 144, 10, 54);
+        gantry.fillRect(this.trackCenterX + 30, 144, 10, 54);
+        gantry.fillRoundedRect(this.trackCenterX - 52, 118, 94, 28, 8);
+        this.add.text(this.trackCenterX - 5, 132, 'FINISH', {
+            fontSize: '14px',
+            fontFamily: 'Nunito, Arial, sans-serif',
+            color: '#ffffff',
+            fontStyle: 'bold'
+        }).setOrigin(0.5);
+
+        this.add.text(this.trackCenterX - 128, 130, 'START', {
+            fontSize: '14px',
+            fontFamily: 'Nunito, Arial, sans-serif',
+            color: '#fff7ed',
+            fontStyle: 'bold'
+        }).setOrigin(0.5);
+
+        this.player1.label = this.add.text(88, 198, 'Player 1', {
+            fontSize: '24px',
+            fontFamily: 'Nunito, Arial, sans-serif',
+            color: '#ffffff',
+            fontStyle: 'bold'
+        });
+
+        this.player2.label = this.add.text(88, 384, 'Player 2', {
+            fontSize: '24px',
+            fontFamily: 'Nunito, Arial, sans-serif',
+            color: '#ffffff',
+            fontStyle: 'bold'
         });
     }
 
+    createRacers() {
+        this.player1.sprite = this.add.rectangle(this.trackCenterX - this.trackOuterRx, this.trackCenterY, 40, 22, 0xffb703);
+        this.player2.sprite = this.add.rectangle(this.trackCenterX - this.trackOuterRx, this.trackCenterY + 20, 40, 22, 0x577590);
+
+        this.physics.add.existing(this.player1.sprite);
+        this.physics.add.existing(this.player2.sprite);
+
+        this.player1.sprite.body.setAllowGravity(false);
+        this.player2.sprite.body.setAllowGravity(false);
+
+        this.placeRacer(this.player1, 0);
+        this.placeRacer(this.player2, 1);
+    }
+
     bindControls() {
-        this.input.keyboard.addKey('SPACE');
-        this.input.keyboard.addKey('R');
-        this.input.keyboard.addKey('A');
-        this.input.keyboard.addKey('D');
-        this.input.keyboard.addKey('LEFT');
-        this.input.keyboard.addKey('RIGHT');
+        this.tapKey = this.input.keyboard.addKey('SPACE');
+        this.restartKey = this.input.keyboard.addKey('R');
 
         this.input.on('pointerdown', () => {
             this.sendBoost();
         });
-
-        this.input.keyboard.on('keydown-SPACE', () => {
-            this.sendBoost();
-        });
-
-        this.input.keyboard.on('keydown-R', () => {
-            this.sendRematch();
-        });
-
-        this.input.keyboard.on('keydown-D', () => {
-            this.player1.lane = 1;
-        });
-
-        this.input.keyboard.on('keydown-A', () => {
-            this.player1.lane = -1;
-        });
-
-        this.input.keyboard.on('keydown-LEFT', () => {
-            this.player2.lane = -1;
-        });
-
-        this.input.keyboard.on('keydown-RIGHT', () => {
-            this.player2.lane = 1;
-        });
-
-        this.input.on('pointermove', pointer => {
-            if (!pointer.isDown) return;
-            this.player1.lane = pointer.x < 600 ? -1 : 1;
-        });
     }
 
-    setupRaceHud() {
+    setupHud() {
         const scoreEl = document.getElementById('score');
         const levelEl = document.getElementById('level');
         const speedEl = document.getElementById('speed');
@@ -606,53 +680,40 @@ class TwoPlayerRaceScene extends Phaser.Scene {
         if (speedEl) speedEl.style.display = 'none';
         if (livesEl) livesEl.style.display = 'none';
 
-        if (scoreEl) scoreEl.innerHTML = '<span id="p1-hud">P1: L1/3</span>';
-        if (levelEl) levelEl.innerHTML = '<span id="p2-hud">P2: L1/3</span>';
+        if (scoreEl) scoreEl.innerHTML = 'P1: <span id="score-value">0%</span>';
+        if (levelEl) levelEl.innerHTML = 'P2: <span id="level-value">0%</span>';
 
-        this.statusText = this.add.text(600, 540, 'Waiting for race...', {
-            fontSize: '20px',
+        this.statusText = this.add.text(600, 540, 'Waiting for room setup...', {
+            fontSize: '24px',
             fontFamily: 'Nunito, Arial, sans-serif',
-            color: '#ffffff',
-            fontStyle: 'bold',
-            backgroundColor: '#000000',
-            backgroundMargin: { left: 12, right: 12, top: 8, bottom: 8 },
-            padding: { left: 12, right: 12, top: 8, bottom: 8 }
+            color: '#0b3d91',
+            fontStyle: 'bold'
         }).setOrigin(0.5);
     }
 
-    updateRaceHud() {
-        const p1Lap = Math.floor(this.player1.progress) + 1;
-        const p2Lap = Math.floor(this.player2.progress) + 1;
-        const p1Progress = this.player1.progress >= this.lapsToWin ? 100 : Math.floor((this.player1.progress % 1) * 100);
-        const p2Progress = this.player2.progress >= this.lapsToWin ? 100 : Math.floor((this.player2.progress % 1) * 100);
-
-        const p1Hud = document.getElementById('p1-hud');
-        const p2Hud = document.getElementById('p2-hud');
-
-        if (p1Hud) p1Hud.textContent = `P1: L${p1Lap}/${this.lapsToWin} ${p1Progress}%`;
-        if (p2Hud) p2Hud.textContent = `P2: L${p2Lap}/${this.lapsToWin} ${p2Progress}%`;
-    }
-
     update(_time, delta) {
-        if (this.raceActive) {
-            const dt = Math.max(0.001, (delta || 16) / 1000);
-            this.roadScroll += dt * (2.5 + (this.player1.progress % 1));
-            this.roadCurve = Math.sin(this.player1.progress * Math.PI * 2) * 0.7;
+        if (Phaser.Input.Keyboard.JustDown(this.tapKey)) {
+            this.sendBoost();
+        }
 
-            this.renderRoad(this.roadScroll, this.roadCurve);
-
-            const playerX = this.trackCenterX + (this.player1.lane * 115);
-            this.player1.sprite.x += (playerX - this.player1.sprite.x) * 0.2;
-            this.player1.sprite.y = 472;
-
-            const lead = Phaser.Math.Clamp(this.player2.progress - this.player1.progress, -0.5, 0.5);
-            const oppY = Phaser.Math.Linear(502, 350, (lead + 0.5));
-            const oppX = this.trackCenterX + (this.player2.lane * Phaser.Math.Linear(135, 95, (oppY - 350) / 152));
-            this.player2.sprite.x += (oppX - this.player2.sprite.x) * 0.2;
-            this.player2.sprite.y += (oppY - this.player2.sprite.y) * 0.2;
+        if (Phaser.Input.Keyboard.JustDown(this.restartKey)) {
+            this.sendRematch();
         }
 
         this.updateAiRace(delta || 0);
+    }
+
+    updateProgressHud() {
+        const p1Lap = Math.min(this.lapsToWin, Math.floor(this.player1.progress) + 1);
+        const p2Lap = Math.min(this.lapsToWin, Math.floor(this.player2.progress) + 1);
+        const p1Progress = this.player1.progress >= this.lapsToWin ? 100 : Math.floor((this.player1.progress % 1) * 100);
+        const p2Progress = this.player2.progress >= this.lapsToWin ? 100 : Math.floor((this.player2.progress % 1) * 100);
+
+        const scoreValue = document.getElementById('score-value');
+        const levelValue = document.getElementById('level-value');
+
+        if (scoreValue) scoreValue.textContent = `L${p1Lap}/${this.lapsToWin} ${p1Progress}%`;
+        if (levelValue) levelValue.textContent = `L${p2Lap}/${this.lapsToWin} ${p2Progress}%`;
     }
 }
 
