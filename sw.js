@@ -1,4 +1,4 @@
-const CACHE_NAME = 'coriander-arcade-v5';
+const CACHE_NAME = 'coriander-arcade-v6';
 
 const APP_SHELL = [
   './',
@@ -12,6 +12,8 @@ const APP_SHELL = [
   './src/gameScene.js',
   './src/trafficRunnerScene.js',
   './src/starPawsShooterScene.js',
+  './src/tossingScene.js',
+  './src/twoPlayerRaceScene.js',
   './src/big2Scene.js'
 ];
 
