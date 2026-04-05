@@ -161,6 +161,8 @@ class TwoPlayerRaceScene extends Phaser.Scene {
         this.physics.world.gravity.y = 0;
         this.cameras.main.setBackgroundColor('#d8f3ff');
 
+        this.removeAllRaceOverlays();
+
         this.trackStartX = 110;
         this.trackFinishX = 1090;
         this.topLaneY = 230;
@@ -185,6 +187,20 @@ class TwoPlayerRaceScene extends Phaser.Scene {
         this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => {
             this.cleanupNetworkTimers();
             this.unmountOverlay();
+        });
+
+        this.events.once(Phaser.Scenes.Events.DESTROY, () => {
+            this.cleanupNetworkTimers();
+            this.unmountOverlay();
+        });
+    }
+
+    removeAllRaceOverlays() {
+        const staleOverlays = document.querySelectorAll('#race-online-overlay, [data-race-overlay="true"]');
+        staleOverlays.forEach(node => {
+            if (node && node.parentNode) {
+                node.parentNode.removeChild(node);
+            }
         });
     }
 
@@ -248,11 +264,13 @@ class TwoPlayerRaceScene extends Phaser.Scene {
 
     mountMenuOverlay() {
         this.unmountOverlay();
+        this.removeAllRaceOverlays();
         const parent = document.getElementById('game-page');
         if (!parent) return;
 
         const root = document.createElement('div');
         root.id = 'race-online-overlay';
+        root.dataset.raceOverlay = 'true';
         root.style.display = 'flex';
         root.style.alignItems = 'center';
         root.style.justifyContent = 'center';
@@ -368,6 +386,7 @@ class TwoPlayerRaceScene extends Phaser.Scene {
     }
 
     unmountOverlay() {
+        this.removeAllRaceOverlays();
         if (this.overlayRoot && this.overlayRoot.parentNode) {
             this.overlayRoot.parentNode.removeChild(this.overlayRoot);
         }
@@ -790,15 +809,69 @@ class TwoPlayerRaceScene extends Phaser.Scene {
         });
     }
 
+    createRaceCar(x, y, color, accentColor) {
+        // Create a container for the race car
+        const car = this.add.container(x, y);
+
+        // Create graphics for drawing the car
+        const graphics = this.make.graphics({ x: 0, y: 0, add: false });
+
+        // Main chassis (elongated body like a formula race car)
+        graphics.fillStyle(color, 1);
+        graphics.fillRect(-18, -10, 36, 20);
+
+        // Front spoiler/nose cone
+        graphics.fillStyle(accentColor, 1);
+        graphics.fillTriangle(-18, -8, -24, -10, -24, 10);
+        graphics.fillTriangle(-18, 8, -24, -10, -24, 10);
+
+        // Rear spoiler wing
+        graphics.fillStyle(accentColor, 1);
+        graphics.fillRect(16, -12, 4, 24);
+        graphics.fillRect(20, -14, 2, 28);
+
+        // Windows (cockpit)
+        graphics.fillStyle(0x87ceeb, 0.7);
+        graphics.fillRect(-6, -6, 8, 12);
+        graphics.fillRect(6, -4, 6, 8);
+
+        // Headlights (front)
+        graphics.fillStyle(0xffff00, 0.9);
+        graphics.fillCircle(-20, -6, 3);
+        graphics.fillCircle(-20, 6, 3);
+
+        // Side air intakes
+        graphics.fillStyle(accentColor, 0.6);
+        graphics.fillRect(-12, -11, 4, 3);
+        graphics.fillRect(-12, 8, 4, 3);
+
+        // Racing stripes (center)
+        graphics.fillStyle(0xffffff, 0.5);
+        graphics.fillRect(-2, -10, 2, 20);
+
+        // Add the graphics to the container
+        car.add(graphics);
+
+        // Enable physics
+        this.physics.add.existing(car);
+        car.body.setAllowGravity(false);
+
+        return car;
+    }
+
     createRacers() {
-        this.player1.sprite = this.add.rectangle(this.trackCenterX - this.trackOuterRx, this.trackCenterY, 40, 22, 0xffb703);
-        this.player2.sprite = this.add.rectangle(this.trackCenterX - this.trackOuterRx, this.trackCenterY + 20, 40, 22, 0x577590);
-
-        this.physics.add.existing(this.player1.sprite);
-        this.physics.add.existing(this.player2.sprite);
-
-        this.player1.sprite.body.setAllowGravity(false);
-        this.player2.sprite.body.setAllowGravity(false);
+        this.player1.sprite = this.createRaceCar(
+            this.trackCenterX - this.trackOuterRx,
+            this.trackCenterY,
+            0xffb703,  // Orange body
+            0xff6b35   // Red accent
+        );
+        this.player2.sprite = this.createRaceCar(
+            this.trackCenterX - this.trackOuterRx,
+            this.trackCenterY + 20,
+            0x577590,  // Dark blue body
+            0x00d4ff   // Cyan accent
+        );
 
         this.placeRacer(this.player1, 0);
         this.placeRacer(this.player2, 1);

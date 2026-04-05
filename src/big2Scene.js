@@ -209,8 +209,20 @@ const BIG2_I18N = {
 };
 
 function big2Lang() {
-    if (typeof window === 'undefined' || !window.localStorage) return 'en';
-    return window.localStorage.getItem('selectedLanguage') || 'en';
+    if (typeof window === 'undefined') return 'en';
+
+    const raw = String(
+        window.localStorage?.getItem('selectedLanguage') ||
+        window.selectedLanguage ||
+        'en'
+    ).trim();
+    const lower = raw.toLowerCase();
+
+    if (lower === 'zh' || lower === 'zh-cn' || lower === 'zh_cn' || lower === 'cn') return 'zh-CN';
+    if (lower === 'ko' || lower === 'ko-kr' || lower === 'ko_kr' || lower === 'kr') return 'ko-KR';
+    if (lower === 'en' || lower === 'en-us' || lower === 'en_us') return 'en';
+
+    return BIG2_I18N[raw] ? raw : 'en';
 }
 
 function big2TextPack() {
@@ -1095,6 +1107,11 @@ class Big2UI {
         this.networkPollTimer = null;
         this.networkError = '';
         this.lastNetworkHandSignature = '';
+        this.lastCardDropSoundKey = '';
+        this.cardDropSoundPrimed = false;
+        this.cardDropAudioCtx = null;
+        this.cardDropAudioUnlocked = false;
+        this._audioUnlockHandler = null;
         this.lastEmoteAt = 0;
         this.lastSeenEmoteStamp = 0;
         this.transientEmote = null;
@@ -1128,11 +1145,127 @@ class Big2UI {
         this.networkState = null;
         this.networkError = '';
         this.lastNetworkHandSignature = '';
+        this.lastCardDropSoundKey = '';
+        this.cardDropSoundPrimed = false;
+        this.cardDropAudioUnlocked = false;
         this.lastEmoteAt = 0;
         this.lastSeenEmoteStamp = 0;
         this.transientEmote = null;
         this.firstPlaceWinnerKey = '';
         this.transientWinner = null;
+    }
+
+    _tablePlayKey(state) {
+        const table = state?.table;
+        if (!table || !Array.isArray(table.cards) || table.cards.length === 0) return '';
+        const cardKey = table.cards
+            .map(card => card?.label || `${card?.rank || ''}${card?.suit || ''}`)
+            .join('|');
+        const ownerKey = Number.isInteger(state?.tableOwner) ? state.tableOwner : '';
+        return `${ownerKey}:${table.type || ''}:${cardKey}`;
+    }
+
+    _maybePlayCardDropCue(state) {
+        const key = this._tablePlayKey(state);
+        if (!this.cardDropSoundPrimed) {
+            this.cardDropSoundPrimed = true;
+            this.lastCardDropSoundKey = key;
+            return;
+        }
+
+        const changedToNewPlay = Boolean(key) && key !== this.lastCardDropSoundKey;
+        this.lastCardDropSoundKey = key;
+        if (!changedToNewPlay) return;
+        
+        // Call async method without blocking render
+        this._playCardDropCue().catch(e => console.warn('[Big2] Card drop cue failed:', e));
+    }
+
+    async _playCardDropCue() {
+        if (typeof window === 'undefined') return;
+        const AudioCtx = window.AudioContext || window.webkitAudioContext;
+        if (!AudioCtx) return;
+
+        if (!this.cardDropAudioCtx) {
+            this.cardDropAudioCtx = new AudioCtx();
+        }
+        const ctx = this.cardDropAudioCtx;
+        
+        // If suspended, explicitly resume and wait for it
+        if (ctx.state === 'suspended') {
+            try {
+                await ctx.resume();
+            } catch (e) {
+                console.warn('[Big2] Audio context resume failed:', e);
+                return;
+            }
+        }
+
+        // Double-check context is actually running
+        if (ctx.state !== 'running') {
+            console.warn('[Big2] Audio context not running, state:', ctx.state);
+            return;
+        }
+
+        const now = ctx.currentTime;
+        const gain = ctx.createGain();
+        gain.gain.setValueAtTime(0.0001, now);
+        gain.gain.exponentialRampToValueAtTime(0.28, now + 0.012);
+        gain.gain.exponentialRampToValueAtTime(0.0001, now + 0.16);
+        gain.connect(ctx.destination);
+
+        const body = ctx.createOscillator();
+        body.type = 'triangle';
+        body.frequency.setValueAtTime(360, now);
+        body.frequency.exponentialRampToValueAtTime(210, now + 0.13);
+        body.connect(gain);
+
+        const click = ctx.createOscillator();
+        const clickGain = ctx.createGain();
+        click.type = 'square';
+        click.frequency.setValueAtTime(620, now);
+        clickGain.gain.setValueAtTime(0.06, now);
+        clickGain.gain.exponentialRampToValueAtTime(0.0001, now + 0.05);
+        click.connect(clickGain);
+        clickGain.connect(gain);
+
+        body.start(now);
+        click.start(now);
+        body.stop(now + 0.17);
+        click.stop(now + 0.055);
+    }
+
+    _unlockCardDropAudio() {
+        if (this.cardDropAudioUnlocked || typeof window === 'undefined') return;
+        const AudioCtx = window.AudioContext || window.webkitAudioContext;
+        if (!AudioCtx) return;
+
+        if (!this.cardDropAudioCtx) {
+            this.cardDropAudioCtx = new AudioCtx();
+        }
+
+        const ctx = this.cardDropAudioCtx;
+        ctx.resume().then(() => {
+            this.cardDropAudioUnlocked = true;
+            this._removeAudioUnlockListeners();
+        }).catch(() => {});
+    }
+
+    _installAudioUnlockListeners() {
+        if (typeof window === 'undefined' || this._audioUnlockHandler) return;
+        this._audioUnlockHandler = () => this._unlockCardDropAudio();
+        const opts = { passive: true };
+        window.addEventListener('pointerdown', this._audioUnlockHandler, opts);
+        window.addEventListener('touchstart', this._audioUnlockHandler, opts);
+        window.addEventListener('keydown', this._audioUnlockHandler, opts);
+    }
+
+    _removeAudioUnlockListeners() {
+        if (typeof window === 'undefined' || !this._audioUnlockHandler) return;
+        window.removeEventListener('pointerdown', this._audioUnlockHandler);
+        window.removeEventListener('touchstart', this._audioUnlockHandler);
+        window.removeEventListener('keydown', this._audioUnlockHandler);
+        this._audioUnlockHandler = null;
     }
 
     _resolveFirstPlaceWinner(players, finishOrder) {
@@ -1253,6 +1386,7 @@ class Big2UI {
     }
 
     destroy() {
+        this._removeAudioUnlockListeners();
         this._resetLobbyState();
         this.game = null;
         this.networkState = null;
@@ -1274,6 +1408,7 @@ class Big2UI {
     /** Mount the UI into the container */
     mount() {
         this._resetLobbyState();
+        this._installAudioUnlockListeners();
         const container = document.getElementById(this.containerId);
         if (!container) return;
         container.innerHTML = '';
@@ -1657,6 +1792,8 @@ class Big2UI {
         this._clearNetworkPolling();
         this.networkMode = false;
         this.networkState = null;
+        this.lastCardDropSoundKey = '';
+        this.cardDropSoundPrimed = false;
         this.game = new Big2Game(numPlayers, names);
         this._primeWinnerAnnouncement(this.game.players, this.game.finishOrder);
         this.localSeat = this.game.currentTurn;
@@ -1673,6 +1810,8 @@ class Big2UI {
         this.networkMode = true;
         this.networkError = '';
         this.selectedIndices = new Set();
+        this.lastCardDropSoundKey = '';
+        this.cardDropSoundPrimed = false;
 
         const first = await getOnlineGameStateSession(this.currentLobbyCode, this.currentPlayerId);
         if (!first.ok) {
@@ -1717,6 +1856,7 @@ class Big2UI {
                 container.appendChild(loading);
                 return;
             }
+            this._maybePlayCardDropCue(this.networkState);
             if (this.networkState.gameOver) {
                 container.appendChild(this._buildNetworkResultScreen(this.networkState));
                 return;
@@ -1726,6 +1866,7 @@ class Big2UI {
         }
 
         const snap = this.game.snapshot();
+        this._maybePlayCardDropCue(snap);
 
         if (snap.gameOver) {
             container.appendChild(this._buildResultScreen(snap));

@@ -35,6 +35,10 @@ function createConfig(sceneClass) {
 
 // Start game function called by navigation
 function startGame(gameKey = 'cat-adventure') {
+    if (game && window.currentRunningGameKey !== gameKey) {
+        stopGame();
+    }
+
     if (!game) {
         const sceneFactory = sceneMap[gameKey] || sceneMap['cat-adventure'];
         const sceneClass = sceneFactory ? sceneFactory() : window.GameScene;
@@ -59,8 +63,12 @@ window.startGame = startGame;
 // Clean up game instance for restart
 function stopGame() {
     if (window.currentGameInstance) {
-        window.currentGameInstance.scene.pause();
-        window.currentGameInstance.scene.stop();
+        try {
+            window.currentGameInstance.scene.pause();
+            window.currentGameInstance.scene.stop();
+        } catch (error) {
+            console.warn('Scene pause/stop failed during cleanup:', error);
+        }
         window.currentGameInstance.destroy(true);
         window.currentGameInstance = null;
     }

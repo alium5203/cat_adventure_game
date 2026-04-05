@@ -485,6 +485,16 @@ function applyLanguage(lang) {
             }
         }
     }
+
+    // If Big 2 is currently active, re-render the scene so in-game text updates immediately.
+    const big2PageActive = document.getElementById('big2-page')?.classList.contains('active');
+    if (big2PageActive && window._big2UI) {
+        const ui = window._big2UI;
+        const canRenderActiveGame = Boolean(ui.game || (ui.networkMode && ui.networkState));
+        if (canRenderActiveGame && typeof ui._render === 'function') {
+            ui._render();
+        }
+    }
 }
 
 // Show a specific page and hide others
