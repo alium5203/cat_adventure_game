@@ -7,7 +7,7 @@ const translations = {
         hub: {
             kicker: 'Game Portal',
             title: 'Coriander Arcade',
-            copy: 'Five games, one hub. Pick your challenge.',
+            copy: 'Six games, one hub. Pick your challenge.',
             cards: {
                 cat: {
                     status: 'Live Now',
@@ -50,6 +50,13 @@ const translations = {
                     copy: 'Two players race side by side. Mash your key or tap your side to sprint to the finish first.',
                     genre: 'Head-to-Head',
                     players: '2 Players'
+                },
+                fight: {
+                    status: 'Live Now',
+                    title: 'Cat Fight Arena',
+                    copy: 'Brawl in a neon arena. Move, jump, and strike first to knock out your rival.',
+                    genre: 'Fighting',
+                    players: '1-2 Players'
                 }
             }
         },
@@ -74,7 +81,7 @@ const translations = {
         hub: {
             kicker: '游戏大厅',
             title: 'Coriander Arcade',
-            copy: '五款游戏，一个中心。选择你的挑战。',
+            copy: '六款游戏，一个中心。选择你的挑战。',
             cards: {
                 cat: {
                     status: '正在开放',
@@ -117,6 +124,13 @@ const translations = {
                     copy: '两位玩家并排竞速。狂按按键或点击自己一侧，率先冲线获胜。',
                     genre: '对战竞速',
                     players: '2 名玩家'
+                },
+                fight: {
+                    status: '正在开放',
+                    title: '猫咪格斗场',
+                    copy: '在霓虹擂台中对战。移动、跳跃、攻击，先把对手打倒。',
+                    genre: '格斗',
+                    players: '1-2 名玩家'
                 }
             }
         },
@@ -141,7 +155,7 @@ const translations = {
         hub: {
             kicker: '게임 포털',
             title: 'Coriander Arcade',
-            copy: '다섯 가지 게임, 하나의 허브. 도전을 선택하세요.',
+            copy: '여섯 가지 게임, 하나의 허브. 도전을 선택하세요.',
             cards: {
                 cat: {
                     status: '지금 플레이',
@@ -184,6 +198,13 @@ const translations = {
                     copy: '두 플레이어가 나란히 달립니다. 각자 키를 연타하거나 화면 한쪽을 터치해 먼저 결승선에 도착하세요.',
                     genre: '대전 레이싱',
                     players: '2인 플레이'
+                },
+                fight: {
+                    status: '지금 플레이',
+                    title: '고양이 격투 아레나',
+                    copy: '네온 아레나에서 격돌하세요. 이동, 점프, 공격으로 먼저 상대를 쓰러뜨리세요.',
+                    genre: '격투',
+                    players: '1-2인 플레이'
                 }
             }
         },
@@ -405,7 +426,12 @@ function applyLanguage(lang) {
         'race-card-title': translation.hub?.cards?.race?.title,
         'race-card-copy': translation.hub?.cards?.race?.copy,
         'race-card-genre': translation.hub?.cards?.race?.genre,
-        'race-card-players': translation.hub?.cards?.race?.players
+        'race-card-players': translation.hub?.cards?.race?.players,
+        'fight-card-status': translation.hub?.cards?.fight?.status,
+        'fight-card-title': translation.hub?.cards?.fight?.title,
+        'fight-card-copy': translation.hub?.cards?.fight?.copy,
+        'fight-card-genre': translation.hub?.cards?.fight?.genre,
+        'fight-card-players': translation.hub?.cards?.fight?.players
     };
     Object.keys(hubCardMap).forEach(id => {
         const el = document.getElementById(id);

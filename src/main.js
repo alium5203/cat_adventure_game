@@ -5,7 +5,8 @@ const sceneMap = {
     'turbo-traffic': () => window.TrafficRunnerScene,
     'star-paws-shooter': () => window.ShootingScene,
     'tossing-game': () => window.TossingScene,
-    'two-people-race': () => window.TwoPlayerRaceScene
+    'two-people-race': () => window.TwoPlayerRaceScene,
+    'fighting-game': () => window.FightingGameScene
 };
 
 function createConfig(sceneClass) {

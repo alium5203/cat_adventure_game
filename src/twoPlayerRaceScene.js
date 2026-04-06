@@ -1,4 +1,7 @@
-const RACE_DEPLOYED_ORIGIN = 'https://agile-brushlands-24267-9cfa491ed233.herokuapp.com';
+const RACE_DEPLOYED_ORIGINS = [
+    'https://www.cocoabeans.org',
+    'https://agile-brushlands-24267-9cfa491ed233.herokuapp.com'
+];
 const RACE_LAPS_TO_WIN_DEFAULT = 3;
 
 class TwoPlayerRaceScene extends Phaser.Scene {
@@ -225,8 +228,11 @@ class TwoPlayerRaceScene extends Phaser.Scene {
 
     getApiCandidates(path) {
         const candidates = [path];
-        if (typeof window !== 'undefined' && window.location.origin !== RACE_DEPLOYED_ORIGIN) {
-            candidates.push(`${RACE_DEPLOYED_ORIGIN}${path}`);
+        const activeOrigin = typeof window !== 'undefined' ? window.location.origin : '';
+        for (const origin of RACE_DEPLOYED_ORIGINS) {
+            if (origin && origin !== activeOrigin) {
+                candidates.push(`${origin}${path}`);
+            }
         }
         return [...new Set(candidates)];
     }
@@ -257,7 +263,7 @@ class TwoPlayerRaceScene extends Phaser.Scene {
 
         const message = String(lastError && lastError.message ? lastError.message : lastError);
         if (message.includes('Failed to fetch') || message.includes('NetworkError') || message.includes('Load failed')) {
-            throw new Error(`Cannot reach Race API. Open the live site at ${RACE_DEPLOYED_ORIGIN} or run npm start locally.`);
+            throw new Error(`Cannot reach Race API. Open the live site at ${RACE_DEPLOYED_ORIGINS[0]} or run npm start locally.`);
         }
         throw lastError || new Error('Race API request failed.');
     }
