@@ -6,17 +6,17 @@ class ShootingScene extends Phaser.Scene {
 
     static translations = {
         en: {
-            hit: 'SHIP HIT!',
+            hit: 'PILOT HIT!',
             gameOver: 'MISSION FAILED',
             levelUp: 'LEVEL {level}'
         },
         'zh-CN': {
-            hit: '飞船受损！',
+            hit: '飞行员受伤！',
             gameOver: '任务失败',
             levelUp: '第 {level} 关'
         },
         'ko-KR': {
-            hit: '함선 피격!',
+            hit: '파일럿 피격!',
             gameOver: '미션 실패',
             levelUp: '레벨 {level}'
         }
@@ -264,36 +264,52 @@ class ShootingScene extends Phaser.Scene {
     }
 
     createPlayerVisual(x, y) {
-        const fighter = this.add.container(x, y);
-        const torso = this.add.ellipse(0, 10, 58, 72, 0x22c55e);
-        const helmet = this.add.ellipse(0, -16, 40, 34, 0x16a34a);
-        const visor = this.add.ellipse(0, -16, 24, 14, 0xa5f3fc);
-        const shoulderLeft = this.add.circle(-24, 8, 10, 0x15803d);
-        const shoulderRight = this.add.circle(24, 8, 10, 0x15803d);
-        const thrusterLeft = this.add.triangle(-14, 44, 0, 0, 8, 0, 4, 16, 0xf97316);
-        const thrusterRight = this.add.triangle(14, 44, 0, 0, 8, 0, 4, 16, 0xf97316);
-        fighter.add([torso, helmet, visor, shoulderLeft, shoulderRight, thrusterLeft, thrusterRight]);
-        return fighter;
+        const pilot = this.add.container(x, y);
+        const body = this.add.rectangle(0, 14, 34, 46, 0x22c55e);
+        const jacket = this.add.rectangle(0, 12, 24, 34, 0x15803d);
+        const neck = this.add.rectangle(0, -8, 12, 8, 0xf1c27d);
+        const head = this.add.circle(0, -24, 16, 0xf1c27d);
+        const hair = this.add.ellipse(0, -30, 28, 12, 0x1f2937);
+        const eyeLeft = this.add.circle(-5, -24, 2, 0x111827);
+        const eyeRight = this.add.circle(5, -24, 2, 0x111827);
+        const armLeft = this.add.rectangle(-20, 12, 10, 28, 0xf1c27d);
+        const armRight = this.add.rectangle(20, 12, 10, 28, 0xf1c27d);
+        const blaster = this.add.rectangle(30, 10, 12, 28, 0x334155);
+        const legLeft = this.add.rectangle(-8, 38, 10, 18, 0x14532d);
+        const legRight = this.add.rectangle(8, 38, 10, 18, 0x14532d);
+
+        pilot.add([body, jacket, neck, head, hair, eyeLeft, eyeRight, armLeft, armRight, blaster, legLeft, legRight]);
+        return pilot;
     }
 
     createEnemyVisual(x, y, color, isBoss = false) {
         const enemy = this.add.container(x, y);
 
         if (isBoss) {
-            const hull = this.add.ellipse(0, 0, 170, 120, 0x7e22ce);
-            const canopy = this.add.ellipse(0, -10, 72, 40, 0xf0abfc);
-            const wingLeft = this.add.triangle(-76, 8, 0, 0, 50, 20, 50, -20, 0x6d28d9);
-            const wingRight = this.add.triangle(76, 8, 0, 0, -50, 20, -50, -20, 0x6d28d9);
-            const core = this.add.circle(0, 18, 12, 0xfef08a);
-            enemy.add([wingLeft, wingRight, hull, canopy, core]);
+            const coat = this.add.rectangle(0, 14, 74, 96, 0x7e22ce);
+            const armor = this.add.rectangle(0, 12, 54, 62, 0x6d28d9);
+            const neck = this.add.rectangle(0, -30, 16, 10, 0xf1c27d);
+            const head = this.add.circle(0, -52, 23, 0xf1c27d);
+            const helmet = this.add.ellipse(0, -58, 44, 16, 0x312e81);
+            const eyeLeft = this.add.circle(-8, -52, 3, 0x111827);
+            const eyeRight = this.add.circle(8, -52, 3, 0x111827);
+            const armLeft = this.add.rectangle(-42, 12, 16, 44, 0xf1c27d);
+            const armRight = this.add.rectangle(42, 12, 16, 44, 0xf1c27d);
+            const cannon = this.add.rectangle(58, 16, 14, 44, 0xfef08a);
+            enemy.add([coat, armor, neck, head, helmet, eyeLeft, eyeRight, armLeft, armRight, cannon]);
             return enemy;
         }
 
-        const hull = this.add.ellipse(0, 0, 62, 46, color);
-        const canopy = this.add.ellipse(0, -6, 24, 14, 0xfef08a);
-        const wingLeft = this.add.triangle(-22, 2, 0, 0, 16, 8, 16, -8, color);
-        const wingRight = this.add.triangle(22, 2, 0, 0, -16, 8, -16, -8, color);
-        enemy.add([wingLeft, wingRight, hull, canopy]);
+        const body = this.add.rectangle(0, 10, 34, 46, color);
+        const neck = this.add.rectangle(0, -8, 10, 8, 0xe0ac69);
+        const head = this.add.circle(0, -24, 15, 0xe0ac69);
+        const helmet = this.add.ellipse(0, -30, 28, 10, 0x0f172a);
+        const eyeLeft = this.add.circle(-5, -24, 2, 0x111827);
+        const eyeRight = this.add.circle(5, -24, 2, 0x111827);
+        const armLeft = this.add.rectangle(-20, 10, 9, 26, 0xe0ac69);
+        const armRight = this.add.rectangle(20, 10, 9, 26, 0xe0ac69);
+        const blaster = this.add.rectangle(28, 10, 9, 22, 0x1f2937);
+        enemy.add([body, neck, head, helmet, eyeLeft, eyeRight, armLeft, armRight, blaster]);
         return enemy;
     }
 

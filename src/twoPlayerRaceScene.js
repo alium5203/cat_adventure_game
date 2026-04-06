@@ -67,7 +67,7 @@ class TwoPlayerRaceScene extends Phaser.Scene {
                 player2: 'Player 2',
                 hudP1: 'P1',
                 hudP2: 'P2',
-                aiName: 'AI Cat'
+                aiName: 'AI Racer'
             },
             'zh-CN': {
                 raceTitle: '双人竞速',
@@ -109,7 +109,7 @@ class TwoPlayerRaceScene extends Phaser.Scene {
                 player2: '玩家 2',
                 hudP1: '玩家1',
                 hudP2: '玩家2',
-                aiName: 'AI 猫'
+                aiName: 'AI 选手'
             },
             'ko-KR': {
                 raceTitle: '2인 레이스',
@@ -151,7 +151,7 @@ class TwoPlayerRaceScene extends Phaser.Scene {
                 player2: '플레이어 2',
                 hudP1: 'P1',
                 hudP2: 'P2',
-                aiName: 'AI 고양이'
+                aiName: 'AI 레이서'
             }
         };
 
@@ -815,54 +815,50 @@ class TwoPlayerRaceScene extends Phaser.Scene {
         });
     }
 
-    createRaceCar(x, y, color, accentColor) {
-        // Create a container for the race car
-        const car = this.add.container(x, y);
-
-        // Create graphics for drawing the car
+    createRaceCar(x, y, color, accentColor, skinTone = 0xf1c27d, shirtColor = 0x2563eb) {
+        const racer = this.add.container(x, y);
         const graphics = this.make.graphics({ x: 0, y: 0, add: false });
 
-        // Main chassis (elongated body like a formula race car)
+        // Kart body
         graphics.fillStyle(color, 1);
-        graphics.fillRect(-18, -10, 36, 20);
-
-        // Front spoiler/nose cone
+        graphics.fillRoundedRect(-20, -11, 40, 22, 7);
         graphics.fillStyle(accentColor, 1);
-        graphics.fillTriangle(-18, -8, -24, -10, -24, 10);
-        graphics.fillTriangle(-18, 8, -24, -10, -24, 10);
+        graphics.fillTriangle(-20, -9, -28, 0, -20, 9);
+        graphics.fillRect(15, -13, 6, 26);
 
-        // Rear spoiler wing
-        graphics.fillStyle(accentColor, 1);
-        graphics.fillRect(16, -12, 4, 24);
-        graphics.fillRect(20, -14, 2, 28);
+        // Wheels
+        graphics.fillStyle(0x111827, 1);
+        graphics.fillCircle(-12, -12, 5);
+        graphics.fillCircle(-12, 12, 5);
+        graphics.fillCircle(12, -12, 5);
+        graphics.fillCircle(12, 12, 5);
+        graphics.fillStyle(0x94a3b8, 1);
+        graphics.fillCircle(-12, -12, 2);
+        graphics.fillCircle(-12, 12, 2);
+        graphics.fillCircle(12, -12, 2);
+        graphics.fillCircle(12, 12, 2);
 
-        // Windows (cockpit)
-        graphics.fillStyle(0x87ceeb, 0.7);
-        graphics.fillRect(-6, -6, 8, 12);
-        graphics.fillRect(6, -4, 6, 8);
+        // Human driver (head, hair, shirt, arms)
+        graphics.fillStyle(skinTone, 1);
+        graphics.fillCircle(2, -9, 6);
+        graphics.fillStyle(0x3f3f46, 1);
+        graphics.fillCircle(2, -11, 5);
+        graphics.fillStyle(shirtColor, 1);
+        graphics.fillRoundedRect(-3, -5, 12, 10, 3);
+        graphics.fillStyle(skinTone, 1);
+        graphics.fillRoundedRect(-6, -4, 3, 7, 1);
+        graphics.fillRoundedRect(9, -4, 3, 7, 1);
 
-        // Headlights (front)
-        graphics.fillStyle(0xffff00, 0.9);
-        graphics.fillCircle(-20, -6, 3);
-        graphics.fillCircle(-20, 6, 3);
+        // Steering wheel
+        graphics.lineStyle(2, 0x1f2937, 1);
+        graphics.strokeCircle(-1, 0, 4);
 
-        // Side air intakes
-        graphics.fillStyle(accentColor, 0.6);
-        graphics.fillRect(-12, -11, 4, 3);
-        graphics.fillRect(-12, 8, 4, 3);
+        racer.add(graphics);
 
-        // Racing stripes (center)
-        graphics.fillStyle(0xffffff, 0.5);
-        graphics.fillRect(-2, -10, 2, 20);
+        this.physics.add.existing(racer);
+        racer.body.setAllowGravity(false);
 
-        // Add the graphics to the container
-        car.add(graphics);
-
-        // Enable physics
-        this.physics.add.existing(car);
-        car.body.setAllowGravity(false);
-
-        return car;
+        return racer;
     }
 
     createRacers() {
@@ -870,13 +866,17 @@ class TwoPlayerRaceScene extends Phaser.Scene {
             this.trackCenterX - this.trackOuterRx,
             this.trackCenterY,
             0xffb703,  // Orange body
-            0xff6b35   // Red accent
+            0xff6b35,  // Red accent
+            0xf1c27d,
+            0x1d4ed8
         );
         this.player2.sprite = this.createRaceCar(
             this.trackCenterX - this.trackOuterRx,
             this.trackCenterY + 20,
             0x577590,  // Dark blue body
-            0x00d4ff   // Cyan accent
+            0x00d4ff,  // Cyan accent
+            0x8d5524,
+            0xdc2626
         );
 
         this.placeRacer(this.player1, 0);
