@@ -8,12 +8,14 @@ class FightingGameScene extends Phaser.Scene {
         this.aiHealth = 100;
         this.roundOver = false;
         this.aiThinkMs = 0;
+        this.weaponShots = null;
         this.touchOverlay = null;
         this.touchState = {
             left: false,
             right: false,
             jump: false,
-            attack: false
+            attack: false,
+            blast: false
         };
     }
 
@@ -26,8 +28,8 @@ class FightingGameScene extends Phaser.Scene {
         const dict = {
             en: {
                 title: 'Cat Fight Arena',
-                subtitle: 'Beat the rival cat first!',
-                controls: 'Move: A/D or Left/Right | Jump: W/Up | Attack: SPACE',
+                subtitle: 'Toy weapons only: wand swipes and foam blasts!',
+                controls: 'Move: A/D or Left/Right | Jump: W/Up | Swipe: SPACE | Blast: F',
                 ready: 'Round Start! Fight!',
                 youWin: 'You Win! Press R for rematch.',
                 youLose: 'You Lose! Press R for rematch.',
@@ -36,8 +38,8 @@ class FightingGameScene extends Phaser.Scene {
             },
             'zh-CN': {
                 title: '猫咪格斗场',
-                subtitle: '先击败对手猫咪！',
-                controls: '移动: A/D 或 左右键 | 跳跃: W/上键 | 攻击: 空格',
+                subtitle: '玩具武器对战：魔法棒挥击 + 泡沫弹发射！',
+                controls: '移动: A/D 或 左右键 | 跳跃: W/上键 | 挥击: 空格 | 发射: F',
                 ready: '回合开始！开打！',
                 youWin: '你赢了！按 R 再来一局。',
                 youLose: '你输了！按 R 再来一局。',
@@ -46,8 +48,8 @@ class FightingGameScene extends Phaser.Scene {
             },
             'ko-KR': {
                 title: '고양이 격투 아레나',
-                subtitle: '상대 고양이를 먼저 쓰러뜨리세요!',
-                controls: '이동: A/D 또는 좌/우 | 점프: W/위 | 공격: SPACE',
+                subtitle: '안전한 장난감 무기: 완드 스윙 + 폼 블래스트!',
+                controls: '이동: A/D 또는 좌/우 | 점프: W/위 | 스윙: SPACE | 블래스트: F',
                 ready: '라운드 시작! 파이트!',
                 youWin: '승리! R로 재시작.',
                 youLose: '패배! R로 재시작.',
@@ -70,6 +72,7 @@ class FightingGameScene extends Phaser.Scene {
 
         this.drawArena();
         this.createFighters();
+        this.createWeaponProjectiles();
         this.bindControls();
         this.setupHud();
         this.mountTouchControls();
@@ -130,6 +133,13 @@ class FightingGameScene extends Phaser.Scene {
         this.physics.add.collider(this.ai.sprite, this.ground);
     }
 
+    createWeaponProjectiles() {
+        this.weaponShots = this.physics.add.group({
+            maxSize: 20,
+            allowGravity: false
+        });
+    }
+
     createFighter(x, y, bodyColor, labelText) {
         const container = this.add.container(x, y);
         const graphics = this.make.graphics({ x: 0, y: 0, add: false });
@@ -144,6 +154,14 @@ class FightingGameScene extends Phaser.Scene {
         graphics.fillStyle(0x0f172a, 0.8);
         graphics.fillRect(-18, 16, 14, 34);
         graphics.fillRect(4, 16, 14, 34);
+
+        // Toy wand and foam blaster props to keep combat playful.
+        graphics.fillStyle(0xf472b6, 1);
+        graphics.fillRect(18, -26, 18, 6);
+        graphics.fillStyle(0xfef08a, 1);
+        graphics.fillCircle(38, -23, 4);
+        graphics.fillStyle(0x22d3ee, 1);
+        graphics.fillRoundedRect(-36, -20, 16, 10, 4);
 
         container.add(graphics);
 
@@ -165,6 +183,7 @@ class FightingGameScene extends Phaser.Scene {
             sprite: container,
             label,
             nextAttackAt: 0,
+            nextBlastAt: 0,
             facing: 1,
             attackFlash: false
         };
@@ -178,6 +197,7 @@ class FightingGameScene extends Phaser.Scene {
         this.altRight = this.input.keyboard.addKey('RIGHT');
         this.altJump = this.input.keyboard.addKey('UP');
         this.attackKey = this.input.keyboard.addKey('SPACE');
+        this.blastKey = this.input.keyboard.addKey('F');
         this.restartKey = this.input.keyboard.addKey('R');
     }
 
@@ -240,7 +260,8 @@ class FightingGameScene extends Phaser.Scene {
             </div>
             <div style="display:flex;gap:10px;pointer-events:auto;">
                 <button data-touch="jump" style="width:84px;height:64px;border:none;border-radius:14px;background:rgba(2,132,199,0.78);color:#fff;font-size:18px;font-weight:700;">JUMP</button>
-                <button data-touch="attack" style="width:84px;height:64px;border:none;border-radius:14px;background:rgba(220,38,38,0.82);color:#fff;font-size:18px;font-weight:700;">HIT</button>
+                <button data-touch="attack" style="width:84px;height:64px;border:none;border-radius:14px;background:rgba(220,38,38,0.82);color:#fff;font-size:18px;font-weight:700;">SWIPE</button>
+                <button data-touch="blast" style="width:84px;height:64px;border:none;border-radius:14px;background:rgba(124,58,237,0.84);color:#fff;font-size:18px;font-weight:700;">BLAST</button>
             </div>
         `;
 
@@ -280,6 +301,7 @@ class FightingGameScene extends Phaser.Scene {
         this.touchState.right = false;
         this.touchState.jump = false;
         this.touchState.attack = false;
+        this.touchState.blast = false;
     }
 
     tryAttack(attacker, defender, damage, reach, knockback, cooldownMs) {
@@ -317,10 +339,93 @@ class FightingGameScene extends Phaser.Scene {
             defender.sprite.body.setVelocityX(knockback * facingDir);
             defender.sprite.body.setVelocityY(-240);
 
+            this.spawnHitSpark(defender.sprite.x, defender.sprite.y - 48, 0xfff08a);
             this.cameras.main.shake(90, 0.004);
             this.updateHudValues();
             this.checkRoundEnd();
         }
+    }
+
+    fireToyBlast(attacker, defender, damage, speed, cooldownMs) {
+        if (this.roundOver || !this.weaponShots) return;
+        const now = this.time.now;
+        if (now < attacker.nextBlastAt) return;
+
+        attacker.nextBlastAt = now + cooldownMs;
+
+        const attackerX = attacker.sprite.x;
+        const attackerY = attacker.sprite.y - 48;
+        const dir = attackerX <= defender.sprite.x ? 1 : -1;
+        attacker.facing = dir;
+
+        const blast = this.add.circle(attackerX + (dir * 26), attackerY, 8, 0x22d3ee, 0.95);
+        this.physics.add.existing(blast);
+        blast.body.setAllowGravity(false);
+        blast.body.setVelocityX(dir * speed);
+        blast.body.setCircle(8);
+
+        blast._target = defender;
+        blast._damage = damage;
+        blast._bornAt = now;
+
+        this.weaponShots.add(blast);
+    }
+
+    updateToyBlasts() {
+        if (!this.weaponShots) return;
+        const now = this.time.now;
+        const blasts = this.weaponShots.getChildren();
+
+        blasts.forEach(blast => {
+            if (!blast || !blast.body) return;
+
+            if (now - (blast._bornAt || 0) > 1100 || blast.x < -20 || blast.x > 1220) {
+                blast.destroy();
+                return;
+            }
+
+            const target = blast._target;
+            if (!target || !target.sprite || !target.sprite.active) return;
+
+            const hit = Phaser.Geom.Intersects.RectangleToRectangle(
+                blast.getBounds(),
+                target.sprite.getBounds()
+            );
+
+            if (!hit) return;
+
+            if (target === this.ai) {
+                this.aiHealth = Math.max(0, this.aiHealth - (blast._damage || 0));
+            } else {
+                this.playerHealth = Math.max(0, this.playerHealth - (blast._damage || 0));
+            }
+
+            const blastDir = blast.body.velocity.x >= 0 ? 1 : -1;
+            target.sprite.body.setVelocityX(220 * blastDir);
+            target.sprite.body.setVelocityY(-170);
+
+            this.spawnHitSpark(blast.x, blast.y, 0x67e8f9);
+            this.cameras.main.shake(65, 0.003);
+            this.updateHudValues();
+            this.checkRoundEnd();
+            blast.destroy();
+        });
+    }
+
+    spawnHitSpark(x, y, color) {
+        const spark = this.add.graphics();
+        spark.fillStyle(color, 1);
+        spark.fillCircle(0, 0, 8);
+        spark.x = x;
+        spark.y = y;
+        this.tweens.add({
+            targets: spark,
+            alpha: 0,
+            scaleX: 2.2,
+            scaleY: 2.2,
+            duration: 180,
+            onComplete: () => spark.destroy()
+        });
     }
 
     checkRoundEnd() {
@@ -363,6 +468,7 @@ class FightingGameScene extends Phaser.Scene {
         const moveRight = this.rightKey.isDown || this.altRight.isDown || this.touchState.right;
         const wantJump = Phaser.Input.Keyboard.JustDown(this.jumpKey) || Phaser.Input.Keyboard.JustDown(this.altJump) || this.touchState.jump;
         const wantAttack = Phaser.Input.Keyboard.JustDown(this.attackKey) || this.touchState.attack;
+        const wantBlast = Phaser.Input.Keyboard.JustDown(this.blastKey) || this.touchState.blast;
 
         if (moveLeft && !moveRight) {
             this.player.sprite.body.setVelocityX(-280);
@@ -380,7 +486,12 @@ class FightingGameScene extends Phaser.Scene {
             this.tryAttack(this.player, this.ai, 12, 110, 360, 290);
         }
 
+        if (wantBlast) {
+            this.fireToyBlast(this.player, this.ai, 8, 560, 480);
+        }
+
         this.runAi(delta || 0);
+        this.updateToyBlasts();
 
         this.player.facing = this.player.sprite.x <= this.ai.sprite.x ? 1 : -1;
         this.ai.facing = this.ai.sprite.x <= this.player.sprite.x ? 1 : -1;
@@ -404,6 +515,10 @@ class FightingGameScene extends Phaser.Scene {
             if (Math.random() < 0.55) {
                 this.tryAttack(this.ai, this.player, 10, 105, 300, 360);
             }
+        }
+
+        if (distance > 210 && Math.random() < 0.26) {
+            this.fireToyBlast(this.ai, this.player, 7, 520, 620);
         }
 
         if (this.ai.sprite.body.blocked.down && Math.random() < 0.06 && distance > 170) {
