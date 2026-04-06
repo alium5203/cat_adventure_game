@@ -28,8 +28,8 @@ class FightingGameScene extends Phaser.Scene {
         const dict = {
             en: {
                 title: 'Cat Fight Arena',
-                subtitle: 'Toy weapons only: wand swipes and foam blasts!',
-                controls: 'Move: A/D or Left/Right | Jump: W/Up | Swipe: SPACE | Blast: F',
+                subtitle: 'Punch, kick and blast your way to victory!',
+                controls: 'Move: A/D or ←/→ | Jump: W/↑ | Punch/Kick: SPACE | Blast: F',
                 ready: 'Round Start! Fight!',
                 youWin: 'You Win! Press R for rematch.',
                 youLose: 'You Lose! Press R for rematch.',
@@ -38,8 +38,8 @@ class FightingGameScene extends Phaser.Scene {
             },
             'zh-CN': {
                 title: '猫咪格斗场',
-                subtitle: '玩具武器对战：魔法棒挥击 + 泡沫弹发射！',
-                controls: '移动: A/D 或 左右键 | 跳跃: W/上键 | 挥击: 空格 | 发射: F',
+                subtitle: '拳打脚踢，全力出手取得胜利！',
+                controls: '移动: A/D 或 左右键 | 跳跃: W/上键 | 出拳/踢: 空格 | 远程: F',
                 ready: '回合开始！开打！',
                 youWin: '你赢了！按 R 再来一局。',
                 youLose: '你输了！按 R 再来一局。',
@@ -48,8 +48,8 @@ class FightingGameScene extends Phaser.Scene {
             },
             'ko-KR': {
                 title: '고양이 격투 아레나',
-                subtitle: '안전한 장난감 무기: 완드 스윙 + 폼 블래스트!',
-                controls: '이동: A/D 또는 좌/우 | 점프: W/위 | 스윙: SPACE | 블래스트: F',
+                subtitle: '주먹과 발차기로 상대를 쓰러뜨려라!',
+                controls: '이동: A/D 또는 ←/→ | 점프: W/↑ | 주먹/발차기: SPACE | 원거리: F',
                 ready: '라운드 시작! 파이트!',
                 youWin: '승리! R로 재시작.',
                 youLose: '패배! R로 재시작.',
@@ -75,6 +75,7 @@ class FightingGameScene extends Phaser.Scene {
         this.createWeaponProjectiles();
         this.bindControls();
         this.setupHud();
+        this.drawHealthBars();
         this.mountTouchControls();
 
         this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => {
@@ -142,41 +143,29 @@ class FightingGameScene extends Phaser.Scene {
 
     createFighter(x, y, bodyColor, labelText) {
         const container = this.add.container(x, y);
-        const graphics = this.make.graphics({ x: 0, y: 0, add: false });
 
-        graphics.fillStyle(bodyColor, 1);
-        graphics.fillRoundedRect(-24, -42, 48, 60, 12);
-        graphics.fillStyle(0xf8fafc, 1);
-        graphics.fillCircle(0, -58, 16);
-        graphics.fillStyle(0x111827, 1);
-        graphics.fillCircle(-6, -60, 3);
-        graphics.fillCircle(6, -60, 3);
-        graphics.fillStyle(0x0f172a, 0.8);
-        graphics.fillRect(-18, 16, 14, 34);
-        graphics.fillRect(4, 16, 14, 34);
+        // Individual body parts — each can be tweened for punch/kick animations
+        const shin1  = this.add.rectangle(-11, 30, 11, 28, 0x374151);
+        const shin2  = this.add.rectangle( 11, 30, 11, 28, 0x374151);
+        const foot1  = this.add.ellipse(-11, 45, 22, 11, 0x1f2937);
+        const foot2  = this.add.ellipse( 11, 45, 22, 11, 0x1f2937);
+        const shorts = this.add.rectangle(0, 16, 38, 16, 0x1e293b);
+        const torso  = this.add.rectangle(0, -2, 36, 42, bodyColor);
+        const armL   = this.add.rectangle(-22, 5, 11, 30, 0xf1c27d);
+        const fistL  = this.add.circle(-22, 20, 9, 0xfde68a);
+        const armR   = this.add.rectangle(22, 5, 11, 30, 0xf1c27d);
+        const fistR  = this.add.circle(22, 20, 9, 0xfde68a);
+        const neck   = this.add.rectangle(0, -22, 12, 10, 0xf1c27d);
+        const head   = this.add.circle(0, -34, 18, 0xf1c27d);
+        const hair   = this.add.ellipse(0, -42, 34, 15, 0x1f2937);
+        const eyeL   = this.add.circle(-6, -34, 3, 0x111827);
+        const eyeR   = this.add.circle( 6, -34, 3, 0x111827);
 
-        // Big toy weapons so they are clearly visible in-game.
-        graphics.fillStyle(0x111827, 0.35);
-        graphics.fillRect(17, -29, 30, 12);
-        graphics.fillRect(-46, -25, 26, 16);
+        container.add([shin1, shin2, foot1, foot2, shorts,
+                       armL, fistL, torso, armR, fistR,
+                       neck, head, hair, eyeL, eyeR]);
 
-        // Wand on right side.
-        graphics.fillStyle(0xf472b6, 1);
-        graphics.fillRect(18, -26, 24, 6);
-        graphics.fillStyle(0xfef08a, 1);
-        graphics.fillCircle(44, -23, 7);
-        graphics.fillStyle(0xffffff, 0.8);
-        graphics.fillCircle(46, -26, 2);
-
-        // Foam blaster on left side.
-        graphics.fillStyle(0x22d3ee, 1);
-        graphics.fillRoundedRect(-44, -22, 24, 12, 5);
-        graphics.fillStyle(0x0ea5e9, 1);
-        graphics.fillRoundedRect(-48, -18, 8, 6, 3);
-
-        container.add(graphics);
-
-        const label = this.add.text(0, -92, labelText, {
+        const label = this.add.text(0, -64, labelText, {
             fontSize: '16px',
             fontFamily: 'Nunito, Arial, sans-serif',
             color: '#ffffff',
@@ -185,18 +174,20 @@ class FightingGameScene extends Phaser.Scene {
         container.add(label);
 
         this.physics.add.existing(container);
-        container.body.setSize(40, 88);
-        container.body.setOffset(-20, -44);
+        container.body.setSize(40, 90);
+        container.body.setOffset(-20, -50);
         container.body.setCollideWorldBounds(true);
         container.body.setDragX(1800);
 
         return {
             sprite: container,
             label,
+            parts: { shin1, shin2, foot1, foot2, armL, fistL, armR, fistR, torso },
+            bodyColor,
             nextAttackAt: 0,
             nextBlastAt: 0,
             facing: 1,
-            attackFlash: false
+            attackMode: 0
         };
     }
 
@@ -331,14 +322,15 @@ class FightingGameScene extends Phaser.Scene {
         const yGap = Math.abs(dy - ay);
         const facingDir = xGap >= 0 ? 1 : -1;
         attacker.facing = facingDir;
+        attacker.sprite.scaleX = facingDir;
 
-        this.tweens.add({
-            targets: attacker.sprite,
-            scaleX: 1.06,
-            scaleY: 0.96,
-            yoyo: true,
-            duration: 80
-        });
+        // Alternate punch and kick each attack
+        attacker.attackMode = (attacker.attackMode || 0) + 1;
+        if (attacker.attackMode % 2 === 0) {
+            this.animatePunch(attacker);
+        } else {
+            this.animateKick(attacker);
+        }
 
         if (Math.abs(xGap) <= reach && yGap < 85) {
             if (defender === this.ai) {
@@ -348,10 +340,11 @@ class FightingGameScene extends Phaser.Scene {
             }
 
             defender.sprite.body.setVelocityX(knockback * facingDir);
-            defender.sprite.body.setVelocityY(-240);
+            defender.sprite.body.setVelocityY(-270);
 
-            this.spawnHitSpark(defender.sprite.x, defender.sprite.y - 48, 0xfff08a);
-            this.cameras.main.shake(90, 0.004);
+            this.animateHitReaction(defender);
+            this.spawnHitSpark(defender.sprite.x, defender.sprite.y - 28, 0xfef08a);
+            this.cameras.main.shake(100, 0.007);
             this.updateHudValues();
             this.checkRoundEnd();
         }
@@ -424,19 +417,83 @@ class FightingGameScene extends Phaser.Scene {
     }
 
     spawnHitSpark(x, y, color) {
-        const spark = this.add.graphics();
-        spark.fillStyle(color, 1);
-        spark.fillCircle(0, 0, 8);
-        spark.x = x;
-        spark.y = y;
-        this.tweens.add({
-            targets: spark,
-            alpha: 0,
-            scaleX: 2.2,
-            scaleY: 2.2,
-            duration: 180,
-            onComplete: () => spark.destroy()
+        for (let i = 0; i < 6; i++) {
+            const spark = this.add.circle(
+                x + Phaser.Math.Between(-16, 16),
+                y + Phaser.Math.Between(-16, 16),
+                Phaser.Math.Between(5, 12),
+                color, 1
+            );
+            this.tweens.add({
+                targets: spark,
+                alpha: 0,
+                scaleX: 3,
+                scaleY: 3,
+                x: spark.x + Phaser.Math.Between(-32, 32),
+                y: spark.y + Phaser.Math.Between(-32, 8),
+                duration: 250,
+                onComplete: () => spark.destroy()
+            });
+        }
+    }
+
+    animatePunch(fighter) {
+        if (!fighter || !fighter.parts) return;
+        const { armR, fistR } = fighter.parts;
+        // Extend the forward arm outward — looks correct on both facing directions
+        // because scaleX=-1 mirrors the container, so armR is always the leading arm.
+        this.tweens.add({ targets: armR,  x: 46, duration: 68, yoyo: true, ease: 'Power3' });
+        this.tweens.add({ targets: fistR, x: 46, duration: 72, yoyo: true, ease: 'Power3' });
+    }
+
+    animateKick(fighter) {
+        if (!fighter || !fighter.parts) return;
+        const { shin2, foot2 } = fighter.parts;
+        this.tweens.add({ targets: shin2, x: 28, y: 14, rotation: 0.45, duration: 88, yoyo: true, ease: 'Power2' });
+        this.tweens.add({ targets: foot2, x: 36, y: 22, duration: 92, yoyo: true, ease: 'Power2' });
+    }
+
+    animateHitReaction(fighter) {
+        if (!fighter || !fighter.parts || !fighter.parts.torso) return;
+        const torso = fighter.parts.torso;
+        torso.setFillColor(0xff3333);
+        this.time.delayedCall(140, () => {
+            if (torso && torso.active) torso.setFillColor(fighter.bodyColor);
         });
+    }
+
+    drawHealthBars() {
+        this.hpGraphics = this.add.graphics().setDepth(10);
+        this.redrawHealthBars();
+
+        // Labels
+        this.add.text(180, 136, 'P1', {
+            fontSize: '14px', fontFamily: 'Nunito,Arial,sans-serif',
+            color: '#ffffff', fontStyle: 'bold'
+        }).setOrigin(0.5).setDepth(11);
+        this.add.text(1020, 136, 'AI', {
+            fontSize: '14px', fontFamily: 'Nunito,Arial,sans-serif',
+            color: '#ffffff', fontStyle: 'bold'
+        }).setOrigin(0.5).setDepth(11);
+    }
+
+    redrawHealthBars() {
+        if (!this.hpGraphics || !this.hpGraphics.active) return;
+        const g = this.hpGraphics;
+        g.clear();
+        const W = 250, H = 20, Y = 127;
+
+        // P1 — left bar, fills right
+        g.fillStyle(0x0f172a, 0.85);
+        g.fillRoundedRect(60, Y, W, H, 6);
+        const p1w = Math.max(0, (this.playerHealth / 100) * W);
+        if (p1w > 0) { g.fillStyle(0x22c55e, 1); g.fillRoundedRect(60, Y, p1w, H, 6); }
+
+        // P2 — right bar, depletes from right to left
+        g.fillStyle(0x0f172a, 0.85);
+        g.fillRoundedRect(890, Y, W, H, 6);
+        const p2w = Math.max(0, (this.aiHealth / 100) * W);
+        if (p2w > 0) { g.fillStyle(0xf87171, 1); g.fillRoundedRect(890 + W - p2w, Y, p2w, H, 6); }
     }
 
     checkRoundEnd() {
@@ -455,6 +512,7 @@ class FightingGameScene extends Phaser.Scene {
         const levelValue = document.getElementById('level-value');
         if (scoreValue) scoreValue.textContent = `${this.getText('hudPlayer')}: ${this.playerHealth}`;
         if (levelValue) levelValue.textContent = `${this.getText('hudAi')}: ${this.aiHealth}`;
+        this.redrawHealthBars();
     }
 
     restartRound() {
@@ -513,27 +571,34 @@ class FightingGameScene extends Phaser.Scene {
 
     runAi(delta) {
         this.aiThinkMs += delta;
-        if (this.aiThinkMs < 90) return;
+        if (this.aiThinkMs < 80) return;
         this.aiThinkMs = 0;
 
         const dx = this.player.sprite.x - this.ai.sprite.x;
         const distance = Math.abs(dx);
 
-        if (distance > 105) {
-            this.ai.sprite.body.setVelocityX(dx > 0 ? 210 : -210);
+        if (distance > 95) {
+            // Chase the player
+            this.ai.sprite.body.setVelocityX(dx > 0 ? 235 : -235);
+        } else if (distance < 40) {
+            // Too close — back up to create punch space
+            this.ai.sprite.body.setVelocityX(dx > 0 ? -90 : 90);
         } else {
+            // In striking range — punch or kick!
             this.ai.sprite.body.setVelocityX(0);
-            if (Math.random() < 0.55) {
-                this.tryAttack(this.ai, this.player, 10, 105, 300, 360);
+            if (Math.random() < 0.72) {
+                this.tryAttack(this.ai, this.player, 10, 100, 310, 320);
             }
         }
 
-        if (distance > 210 && Math.random() < 0.26) {
-            this.fireToyBlast(this.ai, this.player, 7, 520, 620);
+        // Long-range blast
+        if (distance > 190 && Math.random() < 0.28) {
+            this.fireToyBlast(this.ai, this.player, 7, 520, 600);
         }
 
-        if (this.ai.sprite.body.blocked.down && Math.random() < 0.06 && distance > 170) {
-            this.ai.sprite.body.setVelocityY(-630);
+        // Occasional jump to dodge or reposition
+        if (this.ai.sprite.body.blocked.down && Math.random() < 0.05 && distance > 140) {
+            this.ai.sprite.body.setVelocityY(-660);
         }
     }
 }
