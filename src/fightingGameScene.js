@@ -155,13 +155,24 @@ class FightingGameScene extends Phaser.Scene {
         graphics.fillRect(-18, 16, 14, 34);
         graphics.fillRect(4, 16, 14, 34);
 
-        // Toy wand and foam blaster props to keep combat playful.
+        // Big toy weapons so they are clearly visible in-game.
+        graphics.fillStyle(0x111827, 0.35);
+        graphics.fillRect(17, -29, 30, 12);
+        graphics.fillRect(-46, -25, 26, 16);
+
+        // Wand on right side.
         graphics.fillStyle(0xf472b6, 1);
-        graphics.fillRect(18, -26, 18, 6);
+        graphics.fillRect(18, -26, 24, 6);
         graphics.fillStyle(0xfef08a, 1);
-        graphics.fillCircle(38, -23, 4);
+        graphics.fillCircle(44, -23, 7);
+        graphics.fillStyle(0xffffff, 0.8);
+        graphics.fillCircle(46, -26, 2);
+
+        // Foam blaster on left side.
         graphics.fillStyle(0x22d3ee, 1);
-        graphics.fillRoundedRect(-36, -20, 16, 10, 4);
+        graphics.fillRoundedRect(-44, -22, 24, 12, 5);
+        graphics.fillStyle(0x0ea5e9, 1);
+        graphics.fillRoundedRect(-48, -18, 8, 6, 3);
 
         container.add(graphics);
 
